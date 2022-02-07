@@ -4,7 +4,7 @@ import io.netty.handler.codec.http.HttpMethod
 
 sealed trait Method { self =>
   override def toString(): String   = Method.asHttpMethod(self).name()
-  lazy val asHttpMethod: HttpMethod = Method.asHttpMethod(self)
+  lazy val toJava: HttpMethod = Method.asHttpMethod(self)
 }
 
 object Method {
