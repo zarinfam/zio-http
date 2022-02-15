@@ -11,13 +11,9 @@ import zio.test.{DefaultRunnableSpec, assertM}
 
 object LogMiddlewareSpec extends DefaultRunnableSpec with HttpAppTestExtensions {
 
-  private val logger = Middleware.log { case (data, logLevel: zhttp.http.LogLevel) =>
-    logLevel match {
-      case LogLevel.Error =>
-        console.putStrLn(s"ERROR: $data")
-      case LogLevel.Info  =>
-        console.putStrLn(s"INFO: $data")
-    }
+  private val logger = Middleware.log { case data =>
+    console.putStrLn(s"INFO: $data")
+
   }
 
   override def spec = suite("LogMiddleware") {

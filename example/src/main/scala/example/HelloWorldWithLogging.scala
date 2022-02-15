@@ -21,14 +21,8 @@ object HelloWorldWithLogging extends App {
     case Method.GET -> !! / "long-running" => ZIO.succeed(Response.text("Hello World!")).delay(5 seconds)
   }
 
-  val logger = Middleware.log { case (data, logLevel: zhttp.http.LogLevel) =>
-    logLevel match {
-      case zhttp.http.LogLevel.Error =>
-        log.error(data)
-
-      case zhttp.http.LogLevel.Info =>
-        log.info(data)
-    }
+  val logger = Middleware.log { case data =>
+    log.info(s"$data")
 
   }
 

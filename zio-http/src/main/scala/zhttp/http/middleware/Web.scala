@@ -1,6 +1,6 @@
 package zhttp.http.middleware
 
-import zhttp.http.LOG.DefaultLogConfig
+import zhttp.http.middleware.logging.LogFormat.LogChunk
 import zhttp.http._
 import zhttp.http.headers.HeaderModifier
 import zhttp.http.middleware.Web.{PartialInterceptPatch, PartialInterceptZIOPatch}
@@ -14,7 +14,7 @@ import java.io.IOException
 /**
  * Middlewares on an HttpApp
  */
-private[zhttp] trait Web extends Cors with Csrf with Auth with HeaderModifier[HttpMiddleware[Any, Nothing]] {
+private[zhttp] trait Web extends Cors with Csrf with Auth with Log with HeaderModifier[HttpMiddleware[Any, Nothing]] {
   self =>
 
   /**
@@ -50,45 +50,13 @@ private[zhttp] trait Web extends Cors with Csrf with Auth with HeaderModifier[Ht
    * Provides a logging middleware
    */
   def log[R](
-    logger: (String, LogLevel) => ZIO[R, Throwable, Unit],
-    logFmt: LogFmt = DefaultLogConfig,
+    logger: LogChunk => ZIO[R, Throwable, Unit],
   ): HttpMiddleware[R with Clock, Throwable] = {
-
-    def logRequest[R0](
-      logger: (String, LogLevel) => ZIO[R0, Throwable, Unit],
-      request: Request,
-      startTime: Long,
-    ): ZIO[R0, Throwable, Long] = {
-      val logData = logFmt.run(request)
-      logData.flatMap { log =>
-        logger(log, LogLevel.Info).as(startTime)
-      }
-
-    }
-
-    def logResponse[R0](
-      logger: (String, LogLevel) => ZIO[R0, Throwable, Unit],
-      response: Response,
-      startTime: Long,
-      endTime: Long,
-    ): ZIO[R0, Option[Throwable], Patch] = {
-      val logData =
-        logFmt.run(response, startTime, endTime)
-      if (response.status.asJava.code() > 499) {
-        logData.flatMap { log =>
-          logger(log, LogLevel.Error)
-        }.mapBoth(e => Some(e), _ => Patch.empty)
-      } else {
-        logData.flatMap { log =>
-          logger(log, LogLevel.Info)
-        }.mapBoth(e => Some(e), _ => Patch.empty)
-      }
-    }
 
     interceptZIOPatch(req =>
       ZIO
         .succeed(System.currentTimeMillis())
-        .flatMap(start => logRequest(logger, req, start).mapError(e => Some(e))),
+        .flatMap(start => logRequest(logger, req, start).mapBoth(e => Some(e), _.startTime)),
     ) { case (response, start) =>
       for {
         end <- ZIO.succeed(System.currentTimeMillis())
