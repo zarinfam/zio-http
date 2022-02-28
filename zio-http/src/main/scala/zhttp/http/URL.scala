@@ -126,11 +126,13 @@ object URL {
       path   <- Option(uri.getRawPath)
       port       = Option(uri.getPort).filter(_ != -1).getOrElse(portFromScheme(scheme))
       connection = URL.Location.Absolute(scheme, host, port)
+      _ = println(path)
     } yield URL(Path(path), connection, queryParams(uri.getRawQuery), Fragment.fromURI(uri))
   }
 
   private def fromRelativeURI(uri: URI): Option[URL] = for {
     path <- Option(uri.getRawPath)
+    _ = println(path)
   } yield URL(Path(path), Location.Relative, queryParams(uri.getRawQuery), Fragment.fromURI(uri))
 
   private def portFromScheme(scheme: Scheme): Int = scheme match {

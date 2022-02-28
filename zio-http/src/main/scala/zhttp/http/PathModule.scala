@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 
 private[zhttp] trait PathModule { module =>
   val !! : Path = Path.End
+  val ! : String = Path.End.encode
 
   sealed trait Path { self =>
     final override def toString: String = this.encode
@@ -23,7 +24,12 @@ private[zhttp] trait PathModule { module =>
       def loop(self: Path, str: String): String = {
         self match {
           case Path.End              => str
-          case Path.Cons(name, path) => loop(path, s"$str/$name")
+          case Path.Cons(name, path) => {
+            if(path.encode == "//")
+              loop(Path.End,s"$str/$name/" )
+              else
+            loop(path, s"$str/$name")
+          }
         }
       }
       val res                                   = loop(self, "")
@@ -65,7 +71,12 @@ private[zhttp] trait PathModule { module =>
 
   object Path {
     def apply(): Path                   = End
-    def apply(string: String): Path     = if (string.trim.isEmpty) End else Path(string.split("/").toList)
+    def apply(string: String): Path     = if (string.trim.isEmpty) End else {
+      val a: List[String] = string.split("/").toList
+      if(string.endsWith("/"))
+      Path(a ++ List("/"))
+      else Path(a)
+    }
     def apply(seqString: String*): Path = Path(seqString.toList)
     def apply(list: List[String]): Path = list.foldRight[Path](End)((s, a) => a.append(s))
 
@@ -83,11 +94,13 @@ private[zhttp] trait PathModule { module =>
   }
 
   object /: {
-    def unapply(path: Path): Option[(String, Path)] =
+    def unapply(path: Path): Option[(String, Path)] = {
+      println(path)
       path match {
-        case Path.End              => None
+        case Path.End => None
         case Path.Cons(name, path) => Option(name -> path)
       }
+    }
   }
 
   object / {
