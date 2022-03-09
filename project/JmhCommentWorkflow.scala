@@ -7,6 +7,7 @@ object JmhCommentWorkflow {
       runsOnExtraLabels = List("zio-http"),
       id = "comment_jmh_current",
       name = "comment_jmh_current",
+      oses = List("centos"),
       scalas = List(Scala213),
       steps = List(
         WorkflowStep.Use(
