@@ -9,6 +9,7 @@ object JmhCommentWorkflow {
       name = "comment_jmh_current",
       oses = List("centos"),
       scalas = List(Scala213),
+      needs = List("Jmh_Benchmark"),
       steps = List(
         WorkflowStep.Use(
           ref = UseRef.Public("dawidd6", "action-download-artifact", "v2"),

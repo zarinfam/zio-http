@@ -51,6 +51,7 @@ jobs:
 
   comment_jmh_current:
     name: comment_jmh_current
+    needs: [Jmh_Benchmark]
     strategy:
       matrix:
         os: [centos]
