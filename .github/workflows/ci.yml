@@ -41,11 +41,9 @@ jobs:
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee HttpCollectEval
+          bash <(echo "$HttpCollectEval" > HttpCollectEval.txt)
 
-      - name: Shell
-        id: shell
-        run: bash <(echo "$HttpCollectEval" > HttpCollectEval.txt)
-
+      
       - uses: actions/upload-artifact@v3
         with:
           name: jmh_result

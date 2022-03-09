@@ -8,7 +8,9 @@ object JmhCurrentBenchmarkWorkflow {
   val scalaSources: PathFilter = ** / "*.scala"
 
   val l = List(
-    """sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee HttpCollectEval"""
+    """sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee HttpCollectEval
+      |bash <(echo "$HttpCollectEval" > HttpCollectEval.txt)
+      |""".stripMargin
   )
 
   def jmhBenchmark() = Seq(
@@ -31,11 +33,6 @@ object JmhCurrentBenchmarkWorkflow {
             id = Some("run_benchmark"),
             name = Some("run_benchmark"),
           ),
-        WorkflowStep.Run(
-          commands = List("""bash <(echo "$HttpCollectEval" > HttpCollectEval.txt)"""),
-          id = Some("shell"),
-          name = Some("Shell")
-        ),
         WorkflowStep.Use(
          UseRef.Public("actions", "upload-artifact", s"v3"),
           Map(
