@@ -10,15 +10,28 @@ object JmhCommentWorkflow {
       scalas = List(Scala213),
       steps = List(
         WorkflowStep.Use(
+          ref = UseRef.Public("dawidd6", "action-download-artifact", "v2"),
+          Map(
+            "github_token" -> "${{secrets.ACTIONS_PAT}}",
+            "workflow" -> "Jmh_Benchmark"
+          )
+        ),
+        WorkflowStep.Run(
+          commands = List("""bash <(value=`cat HttpCollectEval.txt`
+                          |echo ::set-output name=result::$value)""".stripMargin),
+          id = Some("echo_value"),
+          name = Some("echo_value")
+        ),
+        WorkflowStep.Use(
           ref = UseRef.Public("peter-evans", "commit-comment", "v1"),
           params = Map(
             "sha"  -> "${{github.sha}}",
             "body" ->
-              s"""
+              """
                  |**\uD83D\uDE80 Jmh Benchmark:**
                  |
                  |- Current Branch:
-                 |""".stripMargin,
+                 |${{steps.echo_value.outputs.result}}""".stripMargin,
           ),
         ),
       ),

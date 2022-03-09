@@ -9,7 +9,7 @@ object JmhCurrentBenchmarkWorkflow {
 
   val l = List(
     """sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee HttpCollectEval
-      |bash <(echo "$HttpCollectEval" > HttpCollectEval.txt)
+      |bash <(echo "$HttpCollectEval" > ../HttpCollectEval.txt)
       |""".stripMargin
   )
 
