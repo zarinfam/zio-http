@@ -24,6 +24,7 @@ object JmhCurrentBenchmarkWorkflow {
     WorkflowJob(
       id = "run_Jmh_current_BenchMark",
       name = "Jmh_Benchmark",
+      oses = List("centos"),
       scalas = List(Scala213),
       steps = List(
         WorkflowStep.Use(

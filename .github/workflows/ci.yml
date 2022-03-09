@@ -23,7 +23,7 @@ jobs:
     name: Jmh_Benchmark
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [centos]
         scala: [2.13.8]
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
