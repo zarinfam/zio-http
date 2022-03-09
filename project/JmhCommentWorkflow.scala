@@ -12,10 +12,9 @@ object JmhCommentWorkflow {
       needs = List("run_Jmh_current_BenchMark"),
       steps = List(
         WorkflowStep.Use(
-          ref = UseRef.Public("dawidd6", "action-download-artifact", "v2"),
+          ref = UseRef.Public("actions", "download-artifact", "v3"),
           Map(
-            "github_token" -> "${{secrets.ACTIONS_PAT}}",
-            "workflow" -> "Jmh_Benchmark"
+            "name" -> "jmh_result"
           )
         ),
         WorkflowStep.Run(

@@ -59,10 +59,9 @@ jobs:
         java: [temurin@11]
     runs-on: [ "${{ matrix.os }}", zio-http ]
     steps:
-      - uses: dawidd6/action-download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
-          github_token: ${{secrets.ACTIONS_PAT}}
-          workflow: Jmh_Benchmark
+          name: jmh_result
 
       - name: echo_value
         id: echo_value
