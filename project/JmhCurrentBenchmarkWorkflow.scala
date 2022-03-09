@@ -8,16 +8,7 @@ object JmhCurrentBenchmarkWorkflow {
   val scalaSources: PathFilter = ** / "*.scala"
 
   val l = List(
-    """ sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | tee HttpCollectEval
-      |    grep "thrpt" HttpCollectEval | tee test
-      |          echo "$test"
-      |          while IFS= read -r line; do
-      |                echo "Text read from file: $line"
-      |                IFS=' ' read -ra PARSED_RESULT <<< "$line"
-      |                echo ::set-output name=benchmark_HttpCollectEval_${PARSED_RESULT[1]}::$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}) | tee test2
-      |                done < test2
-      |                 body=$(cat test2)
-      |          echo ::set-output name=body::$body"""".stripMargin,
+    """sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee HttpCollectEval""""
   )
 
   def jmhBenchmark() = Seq(
@@ -39,7 +30,19 @@ object JmhCurrentBenchmarkWorkflow {
             commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt") ++ l,
             id = Some("run_benchmark"),
             name = Some("run_benchmark"),
+          ),
+        WorkflowStep.Run(
+          commands = List("""bash <(echo "$HttpCollectEval" > HttpCollectEval.txt)"""),
+          id = Some("shell"),
+          name = Some("Shell")
+        ),
+        WorkflowStep.Use(
+         UseRef.Public("actions", "upload-artifact", s"v3"),
+          Map(
+            "name" -> "jmh_result",
+            "path" -> "HttpCollectEval.txt"
           )
+        )
       )
     )
   )
