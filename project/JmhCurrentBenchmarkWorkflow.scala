@@ -22,7 +22,6 @@ object JmhCurrentBenchmarkWorkflow {
 
   def jmhBenchmark() = Seq(
     WorkflowJob(
-      runsOnExtraLabels = List("zio-http"),
       id = "run_Jmh_current_BenchMark",
       name = "Jmh_Benchmark",
       scalas = List(Scala213),
