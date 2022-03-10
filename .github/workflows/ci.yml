@@ -19,8 +19,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  run_Jmh_current_BenchMark:
-    name: Jmh_Benchmark
+  run_jmh_benchmark:
+    name: Jmh Benchmark
     strategy:
       matrix:
         os: [centos]
@@ -33,7 +33,7 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: run_benchmark
+      - name: Run Benchmark
         id: run_benchmark
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
@@ -49,9 +49,9 @@ jobs:
           name: jmh_result
           path: HttpCollectEval.txt
 
-  comment_jmh_current:
-    name: comment_jmh_current
-    needs: [run_Jmh_current_BenchMark]
+  jmh_publish:
+    name: Jmh Publish
+    needs: [run_jmh_benchmark_current]
     strategy:
       matrix:
         os: [centos]
@@ -77,7 +77,7 @@ jobs:
            body="${body//$'\n'/'%0A'}"
            body="${body//$'\r'/'%0D'}"
            echo "$body"
-           echo "::set-output name=body::$(echo "$body")""
+           echo "::set-output name=body::$(echo "$body")"
 
       - uses: peter-evans/commit-comment@v1
         with:

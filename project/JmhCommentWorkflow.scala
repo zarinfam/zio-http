@@ -2,14 +2,15 @@ import BuildHelper.Scala213
 import sbtghactions.GenerativePlugin.autoImport.{UseRef, WorkflowJob, WorkflowStep}
 
 object JmhCommentWorkflow {
+
   def jmhBenchmark() = Seq(
     WorkflowJob(
       runsOnExtraLabels = List("zio-http"),
-      id = "comment_jmh_current",
-      name = "comment_jmh_current",
+      id = "jmh_publish",
+      name = "Jmh Publish",
       oses = List("centos"),
       scalas = List(Scala213),
-      needs = List("run_Jmh_current_BenchMark"),
+      needs = List("run_jmh_benchmark_current"),
       steps = List(
         WorkflowStep.Use(
           ref = UseRef.Public("actions", "download-artifact", "v3"),
@@ -29,7 +30,7 @@ object JmhCommentWorkflow {
                             | body="${body//$'\n'/'%0A'}"
                             | body="${body//$'\r'/'%0D'}"
                             | echo "$body"
-                            | echo "::set-output name=body::$(echo "$body")""""".stripMargin),
+                            | echo "::set-output name=body::$(echo "$body")"""".stripMargin),
           id = Some("echo_value"),
           name = Some("echo_value")
         ),
@@ -49,14 +50,6 @@ object JmhCommentWorkflow {
     ),
 
   )
-  /*
-  ${{for i in $(seq ${{steps.echo_value.outputs.lines}})
-             do
-             echo "${benchmark_$i}"
-              ${{steps.echo_value.outputs.benchmark_$i}}
-             done
-             }}
-   */
 
   def apply(): Seq[WorkflowJob] = jmhBenchmark()
 }

@@ -15,8 +15,8 @@ object JmhCurrentBenchmarkWorkflow {
 
   def jmhBenchmark() = Seq(
     WorkflowJob(
-      id = "run_Jmh_current_BenchMark",
-      name = "Jmh_Benchmark",
+      id = "run_jmh_benchmark",
+      name = "Jmh Benchmark",
       oses = List("centos"),
       scalas = List(Scala213),
       steps = List(
@@ -31,7 +31,7 @@ object JmhCurrentBenchmarkWorkflow {
             env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
             commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt") ++ l,
             id = Some("run_benchmark"),
-            name = Some("run_benchmark"),
+            name = Some("Run Benchmark"),
           ),
         WorkflowStep.Use(
          UseRef.Public("actions", "upload-artifact", s"v3"),
