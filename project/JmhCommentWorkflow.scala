@@ -10,7 +10,7 @@ object JmhCommentWorkflow {
       name = "Jmh Publish",
       oses = List("centos"),
       scalas = List(Scala213),
-      needs = List("run_jmh_benchmark_current"),
+      needs = List("run_jmh_benchmark"),
       steps = List(
         WorkflowStep.Use(
           ref = UseRef.Public("actions", "download-artifact", "v3"),

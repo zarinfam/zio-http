@@ -51,7 +51,7 @@ jobs:
 
   jmh_publish:
     name: Jmh Publish
-    needs: [run_jmh_benchmark_current]
+    needs: [run_jmh_benchmark]
     strategy:
       matrix:
         os: [centos]
