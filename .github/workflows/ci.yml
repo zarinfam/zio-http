@@ -40,8 +40,8 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee HttpCollectEval
-          bash <(echo "$HttpCollectEval" > ../HttpCollectEval.txt)
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee ../HttpCollectEval.txt
+          echo "$(<../HttpCollectEval.txt)"
 
       
       - uses: actions/upload-artifact@v3
@@ -66,8 +66,17 @@ jobs:
       - name: echo_value
         id: echo_value
         run: |
-          bash <(value=`cat HttpCollectEval.txt`
-          echo ::set-output name=result::$value)
+          while IFS= read -r line; do
+          echo "Text read from file: $line"
+          IFS=' ' read -ra PARSED_RESULT <<< "$line"
+          SUBSTR=$(echo ${PARSED_RESULT[1]} | cut -d'.' -f 2)
+          echo $SUBSTR
+          B_NAME=$(echo "benchmark_${SUBSTR}")
+          echo $B_NAME
+          B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+          echo $B_VALUE
+          echo "::set-output name=$(echo $B_NAME)::$(echo $B_VALUE)"
+          done < HttpCollectEval.txt
 
       - uses: peter-evans/commit-comment@v1
         with:
@@ -77,4 +86,5 @@ jobs:
             **🚀 Jmh Benchmark:**
 
             - Current Branch:
-            ${{steps.echo_value.outputs.result}}
+            ${{steps.echo_value.outputs.benchmark_benchmarkApp}}
+            ${{steps.echo_value.outputs.benchmark_benchmarkBase}}
