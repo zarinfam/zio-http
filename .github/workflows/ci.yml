@@ -66,22 +66,18 @@ jobs:
       - name: echo_value
         id: echo_value
         run: |
-          while IFS= read -r line; do
-          echo "Text read from file: $line"
-          IFS=' ' read -ra PARSED_RESULT <<< "$line"
-          SUBSTR=$(echo ${PARSED_RESULT[1]} | cut -d'.' -f 2)
-          echo $SUBSTR
-          for i in "${PARSED_RESULT}"
-          do
-             SUBSTR1=$(echo "$i")
-             echo $SUBSTR1
-             B_NAME=$(echo "benchmark_${SUBSTR1}")
-             echo $B_NAME
+           cat > body.txt
+           while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
              B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE
-             echo "::set-output name=$(echo $B_NAME)::$(echo $B_VALUE)"
-          done
-          done < HttpCollectEval.txt
+             echo $B_VALUE >> body.txt
+           done < HttpCollectEval.txt
+           body=$(cat body.txt)
+           body="${body//'%'/'%25'}"
+           body="${body//$'\n'/'%0A'}"
+           body="${body//$'\r'/'%0D'}"
+           echo "$body"
+           echo "::set-output name=body::$(echo "$body")""
 
       - uses: peter-evans/commit-comment@v1
         with:
@@ -91,5 +87,4 @@ jobs:
             **🚀 Jmh Benchmark:**
 
             - Current Branch:
-            ${{steps.echo_value.outputs.benchmark_1}}
-            ${{steps.echo_value.outputs.benchmark_2}}
+             ${{steps.echo_value.outputs.body}}

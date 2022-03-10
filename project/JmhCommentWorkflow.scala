@@ -18,22 +18,18 @@ object JmhCommentWorkflow {
           )
         ),
         WorkflowStep.Run(
-          commands = List("""while IFS= read -r line; do
-                            |echo "Text read from file: $line"
-                            |IFS=' ' read -ra PARSED_RESULT <<< "$line"
-                            |SUBSTR=$(echo ${PARSED_RESULT[1]} | cut -d'.' -f 2)
-                            |echo $SUBSTR
-                            |for i in "${PARSED_RESULT}"
-                            |do
-                            |   SUBSTR1=$(echo "$i")
-                            |   echo $SUBSTR1
-                            |   B_NAME=$(echo "benchmark_${SUBSTR1}")
-                            |   echo $B_NAME
+          commands = List(""" cat > body.txt
+                            | while IFS= read -r line; do
+                            |   IFS=' ' read -ra PARSED_RESULT <<< "$line"
                             |   B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-                            |   echo $B_VALUE
-                            |   echo "::set-output name=$(echo $B_NAME)::$(echo $B_VALUE)"
-                            |done
-                            |done < HttpCollectEval.txt""".stripMargin),
+                            |   echo $B_VALUE >> body.txt
+                            | done < HttpCollectEval.txt
+                            | body=$(cat body.txt)
+                            | body="${body//'%'/'%25'}"
+                            | body="${body//$'\n'/'%0A'}"
+                            | body="${body//$'\r'/'%0D'}"
+                            | echo "$body"
+                            | echo "::set-output name=body::$(echo "$body")""""".stripMargin),
           id = Some("echo_value"),
           name = Some("echo_value")
         ),
@@ -46,14 +42,21 @@ object JmhCommentWorkflow {
                  |**\uD83D\uDE80 Jmh Benchmark:**
                  |
                  |- Current Branch:
-                 |${{steps.echo_value.outputs.benchmark_1}}
-                 |${{steps.echo_value.outputs.benchmark_2}}""".stripMargin,
+                 | ${{steps.echo_value.outputs.body}}""".stripMargin,
           ),
         ),
       ),
     ),
 
   )
+  /*
+  ${{for i in $(seq ${{steps.echo_value.outputs.lines}})
+             do
+             echo "${benchmark_$i}"
+              ${{steps.echo_value.outputs.benchmark_$i}}
+             done
+             }}
+   */
 
   def apply(): Seq[WorkflowJob] = jmhBenchmark()
 }
