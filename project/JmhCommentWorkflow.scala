@@ -23,11 +23,16 @@ object JmhCommentWorkflow {
                             |IFS=' ' read -ra PARSED_RESULT <<< "$line"
                             |SUBSTR=$(echo ${PARSED_RESULT[1]} | cut -d'.' -f 2)
                             |echo $SUBSTR
-                            |B_NAME=$(echo "benchmark_${SUBSTR}")
-                            |echo $B_NAME
-                            |B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-                            |echo $B_VALUE
-                            |echo "::set-output name=$(echo $B_NAME)::$(echo $B_VALUE)"
+                            |for i in "${PARSED_RESULT}"
+                            |do
+                            |   SUBSTR1=$(echo "$i")
+                            |   echo $SUBSTR1
+                            |   B_NAME=$(echo "benchmark_${SUBSTR1}")
+                            |   echo $B_NAME
+                            |   B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+                            |   echo $B_VALUE
+                            |   echo "::set-output name=$(echo $B_NAME)::$(echo $B_VALUE)"
+                            |done
                             |done < HttpCollectEval.txt""".stripMargin),
           id = Some("echo_value"),
           name = Some("echo_value")
@@ -41,8 +46,8 @@ object JmhCommentWorkflow {
                  |**\uD83D\uDE80 Jmh Benchmark:**
                  |
                  |- Current Branch:
-                 |${{steps.echo_value.outputs.benchmark_benchmarkApp}}
-                 |${{steps.echo_value.outputs.benchmark_benchmarkBase}}""".stripMargin,
+                 |${{steps.echo_value.outputs.benchmark_1}}
+                 |${{steps.echo_value.outputs.benchmark_2}}""".stripMargin,
           ),
         ),
       ),
