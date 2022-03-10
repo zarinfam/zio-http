@@ -19,8 +19,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  run_jmh_benchmark:
-    name: Jmh Benchmark
+  run_jmh_benchmark_CookieDecodeBenchmark:
+    name: Jmh Benchmark_CookieDecodeBenchmark
     strategy:
       matrix:
         os: [centos]
@@ -40,18 +40,50 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" | tee ../HttpCollectEval.txt
-          echo "$(<../HttpCollectEval.txt)"
+          cat > CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
 
-      
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result
-          path: HttpCollectEval.txt
+          name: jmh_result_CookieDecodeBenchmark
+          path: CookieDecodeBenchmark.txt
+
+  run_jmh_benchmark_HttpRouteTextPerf:
+    name: Jmh Benchmark_HttpRouteTextPerf
+    strategy:
+      matrix:
+        os: [centos]
+        scala: [2.13.8]
+        java: [temurin@11]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Run Benchmark
+        id: run_benchmark
+        env:
+          GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
+        run: |
+          cd zio-http
+          sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
+          cat > HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: jmh_result_HttpRouteTextPerf
+          path: HttpRouteTextPerf.txt
 
   jmh_publish:
     name: Jmh Publish
-    needs: [run_jmh_benchmark]
+    needs: [run_jmh_benchmark_CookieDecodeBenchmark, run_jmh_benchmark_HttpRouteTextPerf]
     strategy:
       matrix:
         os: [centos]
@@ -61,23 +93,45 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result
+          name: jmh_result_CookieDecodeBenchmark
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: jmh_result_HttpRouteTextPerf
+
+      - name: create_body
+        id: create_body
+        run: |
+           cat > body.txt
+          echo "::set-output name=res::$(echo "$(<body.txt)")"
+
+      - name: echo_value_CookieDecodeBenchmark
+        id: echo_value_CookieDecodeBenchmark
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> body.txt
+           done < CookieDecodeBenchmark.txt
+
+      - name: echo_value_HttpRouteTextPerf
+        id: echo_value_HttpRouteTextPerf
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> body.txt
+           done < HttpRouteTextPerf.txt
 
       - name: echo_value
         id: echo_value
         run: |
-           cat > body.txt
-           while IFS= read -r line; do
-             IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE >> body.txt
-           done < HttpCollectEval.txt
-           body=$(cat body.txt)
+          body=$(cat body.txt)
            body="${body//'%'/'%25'}"
            body="${body//$'\n'/'%0A'}"
            body="${body//$'\r'/'%0D'}"
            echo "$body"
-           echo "::set-output name=body::$(echo "$body")"
+           echo "::set-output name=body::$(echo "$body")
 
       - uses: peter-evans/commit-comment@v1
         with:
