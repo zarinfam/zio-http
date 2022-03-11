@@ -41,7 +41,7 @@ object JmhCurrentBenchmarkWorkflow {
     WorkflowStep.Run(
       commands = List(
         s"""rm -f body.txt
-           | cat > body.txt
+           |cat > body.txt
            |echo "::set-output name=res::$$(echo "$$(<body.txt)")"""".stripMargin),
       id = Some("create_body"),
       name = Some("create_body")
