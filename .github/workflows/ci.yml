@@ -19,9 +19,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build:
   run_jmh_benchmark_CookieDecodeBenchmark:
-    name: Jmh Benchmark_CookieDecodeBenchmark
+    name: Jmh Benchmark CookieDecodeBenchmark
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -58,7 +57,7 @@ jobs:
           path: CookieDecodeBenchmark.txt
 
   run_jmh_benchmark_HttpRouteTextPerf:
-    name: Jmh Benchmark_HttpRouteTextPerf
+    name: Jmh Benchmark HttpRouteTextPerf
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -110,16 +109,16 @@ jobs:
         with:
           name: jmh_result_HttpRouteTextPerf
 
-      - name: create_body
-        id: create_body
+      - name: Create Comment
+        id: create_comment
         run: |
           rm -f body.txt
           cat > body.txt
           echo "::set-output name=res::$(echo "$(<body.txt)")"
 
       
-      - name: echo_value_CookieDecodeBenchmark
-        id: echo_value_CookieDecodeBenchmark
+      - name: Result CookieDecodeBenchmark
+        id: result_CookieDecodeBenchmark
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
@@ -127,8 +126,8 @@ jobs:
              echo $B_VALUE >> body.txt
            done < CookieDecodeBenchmark.txt
 
-      - name: echo_value_HttpRouteTextPerf
-        id: echo_value_HttpRouteTextPerf
+      - name: Result HttpRouteTextPerf
+        id: result_HttpRouteTextPerf
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
@@ -136,8 +135,8 @@ jobs:
              echo $B_VALUE >> body.txt
            done < HttpRouteTextPerf.txt
 
-      - name: echo_value
-        id: echo_value
+      - name: Set Output
+        id: set_output
         run: |
           body=$(cat body.txt)
            body="${body//'%'/'%25'}"
@@ -154,4 +153,4 @@ jobs:
             **🚀 Jmh Benchmark:**
 
             - Current Branch:
-             ${{steps.echo_value.outputs.body}}
+             ${{steps.set_output.outputs.body}}

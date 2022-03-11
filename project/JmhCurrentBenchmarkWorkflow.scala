@@ -39,8 +39,8 @@ object JmhCurrentBenchmarkWorkflow {
         |cat > body.txt
         |echo "::set-output name=res::$(echo "$(<body.txt)")"
         |""".stripMargin),
-      id = Some("create_body"),
-      name = Some("create_body")
+      id = Some("create_comment"),
+      name = Some("Create Comment")
     )
   ) ++ groupedBenchmarks.map(l => {
     WorkflowStep.Run(
@@ -50,8 +50,8 @@ object JmhCurrentBenchmarkWorkflow {
            |   B_VALUE=$$(echo "$${PARSED_RESULT[1]}": "$${PARSED_RESULT[4]}" ops/sec"")
            |   echo $$B_VALUE >> body.txt
            | done < ${l.head}.txt""".stripMargin),
-      id = Some(s"echo_value_${l.head}"),
-      name = Some(s"echo_value_${l.head}")
+      id = Some(s"result_${l.head}"),
+      name = Some(s"Result ${l.head}")
     )
   }) ++ Seq(
     WorkflowStep.Run(
@@ -63,8 +63,8 @@ object JmhCurrentBenchmarkWorkflow {
         | echo "$body"
         | echo "::set-output name=body::$(echo "$body")"""".stripMargin
       ),
-      id = Some("echo_value"),
-      name = Some("echo_value")
+      id = Some("set_output"),
+      name = Some("Set Output")
     ),
     WorkflowStep.Use(
       ref = UseRef.Public("peter-evans", "commit-comment", "v1"),
@@ -75,7 +75,7 @@ object JmhCurrentBenchmarkWorkflow {
             |**\uD83D\uDE80 Jmh Benchmark:**
             |
             |- Current Branch:
-            | ${{steps.echo_value.outputs.body}}""".stripMargin
+            | ${{steps.set_output.outputs.body}}""".stripMargin
       )
     )
   )
@@ -85,7 +85,7 @@ object JmhCurrentBenchmarkWorkflow {
   def jmhRun() = groupedBenchmarks.map(l =>
     WorkflowJob(
       id = s"run_jmh_benchmark_${l.head}",
-      name = s"Jmh Benchmark_${l.head}",
+      name = s"Jmh Benchmark ${l.head}",
       scalas = List(Scala213),
       steps = List(
         WorkflowStep.Use(
