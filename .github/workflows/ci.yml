@@ -48,15 +48,14 @@ jobs:
           cat > CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
 
       - uses: actions/upload-artifact@v3
         with:
           name: jmh_result_CookieDecodeBenchmark
           path: CookieDecodeBenchmark.txt
 
-  run_jmh_benchmark_HttpNestedFlatMapEval:
-    name: Jmh Benchmark HttpNestedFlatMapEval
+  run_jmh_benchmark_HttpCombineEval:
+    name: Jmh Benchmark HttpCombineEval
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -80,20 +79,54 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f HttpNestedFlatMapEval.txt
-          cat > HttpNestedFlatMapEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
+          rm -f HttpCombineEval.txt
+          cat > HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpCombineEval.txt
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_HttpNestedFlatMapEval
-          path: HttpNestedFlatMapEval.txt
+          name: jmh_result_HttpCombineEval
+          path: HttpCombineEval.txt
+
+  run_jmh_benchmark_HttpRouteTextPerf:
+    name: Jmh Benchmark HttpRouteTextPerf
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        scala: [2.13.8]
+        java: [temurin@11]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: zio-http
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Run Benchmark
+        id: run_benchmark
+        env:
+          GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
+        run: |
+          cd zio-http
+          sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
+          rm -f HttpRouteTextPerf.txt
+          cat > HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: jmh_result_HttpRouteTextPerf
+          path: HttpRouteTextPerf.txt
 
   jmh_publish:
     name: Jmh Publish
-    needs: [run_jmh_benchmark_CookieDecodeBenchmark, run_jmh_benchmark_HttpNestedFlatMapEval]
+    needs: [run_jmh_benchmark_CookieDecodeBenchmark, run_jmh_benchmark_HttpCombineEval, run_jmh_benchmark_HttpRouteTextPerf]
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -107,7 +140,11 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_HttpNestedFlatMapEval
+          name: jmh_result_HttpCombineEval
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: jmh_result_HttpRouteTextPerf
 
       - name: Create Comment
         id: create_comment
@@ -126,14 +163,23 @@ jobs:
              echo $B_VALUE >> body.txt
            done < CookieDecodeBenchmark.txt
 
-      - name: Result HttpNestedFlatMapEval
-        id: result_HttpNestedFlatMapEval
+      - name: Result HttpCombineEval
+        id: result_HttpCombineEval
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
              B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
              echo $B_VALUE >> body.txt
-           done < HttpNestedFlatMapEval.txt
+           done < HttpCombineEval.txt
+
+      - name: Result HttpRouteTextPerf
+        id: result_HttpRouteTextPerf
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> body.txt
+           done < HttpRouteTextPerf.txt
 
       - name: Set Output
         id: set_output
@@ -152,7 +198,7 @@ jobs:
 
             **🚀 Jmh Benchmark:**
 
-            - Current Branch:
+            - **Current Branch**:
              ${{steps.set_output.outputs.body}}
 
   run_jmh_main_benchmark_CookieDecodeBenchmark:
@@ -185,15 +231,14 @@ jobs:
           cat > CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
 
       - uses: actions/upload-artifact@v3
         with:
           name: jmh_result_CookieDecodeBenchmark
           path: CookieDecodeBenchmark.txt
 
-  run_jmh_main_benchmark_HttpNestedFlatMapEval:
-    name: Jmh Main Benchmark HttpNestedFlatMapEval
+  run_jmh_main_benchmark_HttpCombineEval:
+    name: Jmh Main Benchmark HttpCombineEval
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -218,20 +263,55 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f HttpNestedFlatMapEval.txt
-          cat > HttpNestedFlatMapEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
+          rm -f HttpCombineEval.txt
+          cat > HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpCombineEval.txt
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_HttpNestedFlatMapEval
-          path: HttpNestedFlatMapEval.txt
+          name: jmh_result_HttpCombineEval
+          path: HttpCombineEval.txt
+
+  run_jmh_main_benchmark_HttpRouteTextPerf:
+    name: Jmh Main Benchmark HttpRouteTextPerf
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        scala: [2.13.8]
+        java: [temurin@11]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@main
+        with:
+          ref: main
+          path: zio-http
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Run Benchmark
+        id: run_benchmark
+        env:
+          GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
+        run: |
+          cd zio-http
+          sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
+          rm -f HttpRouteTextPerf.txt
+          cat > HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: jmh_result_HttpRouteTextPerf
+          path: HttpRouteTextPerf.txt
 
   jmh_publish_main:
     name: Jmh Publish Main
-    needs: [run_jmh_main_benchmark_CookieDecodeBenchmark, run_jmh_main_benchmark_HttpNestedFlatMapEval]
+    needs: [run_jmh_main_benchmark_CookieDecodeBenchmark, run_jmh_main_benchmark_HttpCombineEval, run_jmh_main_benchmark_HttpRouteTextPerf]
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -245,7 +325,11 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_HttpNestedFlatMapEval
+          name: jmh_result_HttpCombineEval
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: jmh_result_HttpRouteTextPerf
 
       - name: Create Comment
         id: create_comment
@@ -264,14 +348,23 @@ jobs:
              echo $B_VALUE >> body.txt
            done < CookieDecodeBenchmark.txt
 
-      - name: Result HttpNestedFlatMapEval
-        id: result_HttpNestedFlatMapEval
+      - name: Result HttpCombineEval
+        id: result_HttpCombineEval
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
              B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
              echo $B_VALUE >> body.txt
-           done < HttpNestedFlatMapEval.txt
+           done < HttpCombineEval.txt
+
+      - name: Result HttpRouteTextPerf
+        id: result_HttpRouteTextPerf
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> body.txt
+           done < HttpRouteTextPerf.txt
 
       - name: Set Output
         id: set_output
@@ -290,5 +383,5 @@ jobs:
 
             **🚀 Jmh Benchmark:**
 
-            - Current Branch:
+            - **Main Branch**:
              ${{steps.set_output.outputs.body}}

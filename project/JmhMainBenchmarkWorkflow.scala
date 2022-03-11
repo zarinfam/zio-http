@@ -74,7 +74,7 @@ object JmhMainBenchmarkWorkflow {
             """
               |**\uD83D\uDE80 Jmh Benchmark:**
               |
-              |- Current Branch:
+              |- **Main Branch**:
               | ${{steps.set_output.outputs.body}}""".stripMargin
         )
       )
