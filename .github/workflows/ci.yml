@@ -19,7 +19,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build:
   run_jmh_benchmark_CookieDecodeBenchmark:
     name: Jmh Benchmark CookieDecodeBenchmark
     strategy:
