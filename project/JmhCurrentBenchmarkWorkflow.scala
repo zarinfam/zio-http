@@ -40,7 +40,8 @@ object JmhCurrentBenchmarkWorkflow {
   }) ++ Seq(
     WorkflowStep.Run(
       commands = List(
-        s""" cat > body.txt
+        s"""rm -f body.txt
+           | cat > body.txt
            |echo "::set-output name=res::$$(echo "$$(<body.txt)")"""".stripMargin),
       id = Some("create_body"),
       name = Some("create_body")
@@ -64,7 +65,7 @@ object JmhCurrentBenchmarkWorkflow {
         | body="${body//$'\n'/'%0A'}"
         | body="${body//$'\r'/'%0D'}"
         | echo "$body"
-        | echo "::set-output name=body::$(echo "$body")""".stripMargin
+        | echo "::set-output name=body::$(echo "$body")"""".stripMargin
       ),
       id = Some("echo_value"),
       name = Some("echo_value")
@@ -101,7 +102,7 @@ object JmhCurrentBenchmarkWorkflow {
         ),
           WorkflowStep.Run(
             env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
-            commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"cat > ${l.head}.txt") ++ lists1(l),
+            commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt",s"cat > ${l.head}.txt") ++ lists1(l),
             id = Some("run_benchmark"),
             name = Some("Run Benchmark"),
           ),
