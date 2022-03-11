@@ -40,6 +40,7 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
+          rm -f CookieDecodeBenchmark.txt
           cat > CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
@@ -72,6 +73,7 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
+          rm -f HttpRouteTextPerf.txt
           cat > HttpRouteTextPerf.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpRouteTextPerf.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpRouteTextPerf.txt
@@ -102,9 +104,11 @@ jobs:
       - name: create_body
         id: create_body
         run: |
-           cat > body.txt
+          rm -f body.txt
+          cat > body.txt
           echo "::set-output name=res::$(echo "$(<body.txt)")"
 
+      
       - name: echo_value_CookieDecodeBenchmark
         id: echo_value_CookieDecodeBenchmark
         run: |
@@ -131,7 +135,7 @@ jobs:
            body="${body//$'\n'/'%0A'}"
            body="${body//$'\r'/'%0D'}"
            echo "$body"
-           echo "::set-output name=body::$(echo "$body")
+           echo "::set-output name=body::$(echo "$body")"
 
       - uses: peter-evans/commit-comment@v1
         with:
