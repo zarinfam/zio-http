@@ -107,7 +107,7 @@ object JmhCurrentBenchmarkWorkflow {
         ),
           WorkflowStep.Run(
             env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
-            commands = List(s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt",s"cat > ${l.head}.txt") ++ lists1(l),
+            commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt",s"cat > ${l.head}.txt") ++ lists1(l),
             id = Some("run_benchmark"),
             name = Some("Run Benchmark"),
           ),
