@@ -49,15 +49,14 @@ jobs:
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
 
       - uses: actions/upload-artifact@v3
         with:
           name: jmh_result_CookieDecodeBenchmark
           path: CookieDecodeBenchmark.txt
 
-  run_jmh_benchmark_HttpRouteTextPerf:
-    name: Jmh Benchmark HttpRouteTextPerf
+  run_jmh_benchmark_HttpNestedFlatMapEval:
+    name: Jmh Benchmark HttpNestedFlatMapEval
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -81,19 +80,20 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f HttpRouteTextPerf.txt
-          cat > HttpRouteTextPerf.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpRouteTextPerf.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+          rm -f HttpNestedFlatMapEval.txt
+          cat > HttpNestedFlatMapEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_HttpRouteTextPerf
-          path: HttpRouteTextPerf.txt
+          name: jmh_result_HttpNestedFlatMapEval
+          path: HttpNestedFlatMapEval.txt
 
   jmh_publish:
     name: Jmh Publish
-    needs: [run_jmh_benchmark_CookieDecodeBenchmark, run_jmh_benchmark_HttpRouteTextPerf]
+    needs: [run_jmh_benchmark_CookieDecodeBenchmark, run_jmh_benchmark_HttpNestedFlatMapEval]
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -107,7 +107,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_HttpRouteTextPerf
+          name: jmh_result_HttpNestedFlatMapEval
 
       - name: Create Comment
         id: create_comment
@@ -126,14 +126,152 @@ jobs:
              echo $B_VALUE >> body.txt
            done < CookieDecodeBenchmark.txt
 
-      - name: Result HttpRouteTextPerf
-        id: result_HttpRouteTextPerf
+      - name: Result HttpNestedFlatMapEval
+        id: result_HttpNestedFlatMapEval
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
              B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
              echo $B_VALUE >> body.txt
-           done < HttpRouteTextPerf.txt
+           done < HttpNestedFlatMapEval.txt
+
+      - name: Set Output
+        id: set_output
+        run: |
+          body=$(cat body.txt)
+           body="${body//'%'/'%25'}"
+           body="${body//$'\n'/'%0A'}"
+           body="${body//$'\r'/'%0D'}"
+           echo "$body"
+           echo "::set-output name=body::$(echo "$body")"
+
+      - uses: peter-evans/commit-comment@v1
+        with:
+          sha: ${{github.sha}}
+          body: |
+
+            **🚀 Jmh Benchmark:**
+
+            - Current Branch:
+             ${{steps.set_output.outputs.body}}
+
+  run_jmh_main_benchmark_CookieDecodeBenchmark:
+    name: Jmh Main Benchmark CookieDecodeBenchmark
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        scala: [2.13.8]
+        java: [temurin@11]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@main
+        with:
+          ref: main
+          path: zio-http
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Run Benchmark
+        id: run_benchmark
+        env:
+          GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
+        run: |
+          cd zio-http
+          sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
+          rm -f CookieDecodeBenchmark.txt
+          cat > CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: jmh_result_CookieDecodeBenchmark
+          path: CookieDecodeBenchmark.txt
+
+  run_jmh_main_benchmark_HttpNestedFlatMapEval:
+    name: Jmh Main Benchmark HttpNestedFlatMapEval
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        scala: [2.13.8]
+        java: [temurin@11]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@main
+        with:
+          ref: main
+          path: zio-http
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Run Benchmark
+        id: run_benchmark
+        env:
+          GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
+        run: |
+          cd zio-http
+          sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
+          rm -f HttpNestedFlatMapEval.txt
+          cat > HttpNestedFlatMapEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpNestedFlatMapEval.txt
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: jmh_result_HttpNestedFlatMapEval
+          path: HttpNestedFlatMapEval.txt
+
+  jmh_publish:
+    name: Jmh Publish
+    needs: [run_jmh_main_benchmark_CookieDecodeBenchmark, run_jmh_main_benchmark_HttpNestedFlatMapEval]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        scala: [2.13.8]
+        java: [temurin@11]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: jmh_result_CookieDecodeBenchmark
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: jmh_result_HttpNestedFlatMapEval
+
+      - name: Create Comment
+        id: create_comment
+        run: |
+          rm -f body.txt
+          cat > body.txt
+          echo "::set-output name=res::$(echo "$(<body.txt)")"
+
+      
+      - name: Result CookieDecodeBenchmark
+        id: result_CookieDecodeBenchmark
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> body.txt
+           done < CookieDecodeBenchmark.txt
+
+      - name: Result HttpNestedFlatMapEval
+        id: result_HttpNestedFlatMapEval
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> body.txt
+           done < HttpNestedFlatMapEval.txt
 
       - name: Set Output
         id: set_output

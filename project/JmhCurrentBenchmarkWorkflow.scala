@@ -17,15 +17,15 @@ object JmhCurrentBenchmarkWorkflow {
   def sbtCommand(list: Seq[String]) = list.map(str =>
     s"""sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 $str" | grep "thrpt" >> ../${list.head}.txt""".stripMargin)
 
-  def groupedBenchmarks = getFilenames.grouped(4).toList
-  def dependencies = groupedBenchmarks.flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_${l.head}"))
+  def groupedBenchmarks(batchSize: Int) = getFilenames.grouped(batchSize).toList
+  def dependencies(batchSize: Int) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_${l.head}"))
 
-  def jmhPublish() = Seq(WorkflowJob(
+  def jmhPublish(batchSize: Int) = Seq(WorkflowJob(
   id = "jmh_publish",
   name = "Jmh Publish",
   scalas = List(Scala213),
-  needs =  dependencies,
-  steps = groupedBenchmarks.map(l => {
+  needs =  dependencies(batchSize),
+  steps = groupedBenchmarks(batchSize).map(l => {
     WorkflowStep.Use(
       ref = UseRef.Public("actions", "download-artifact", "v3"),
       Map(
@@ -42,7 +42,7 @@ object JmhCurrentBenchmarkWorkflow {
       id = Some("create_comment"),
       name = Some("Create Comment")
     )
-  ) ++ groupedBenchmarks.map(l => {
+  ) ++ groupedBenchmarks(batchSize).map(l => {
     WorkflowStep.Run(
       commands = List(
         s"""while IFS= read -r line; do
@@ -82,7 +82,7 @@ object JmhCurrentBenchmarkWorkflow {
 )
   )
 
-  def jmhRun() = groupedBenchmarks.map(l =>
+  def jmhRun(batchSize: Int) = groupedBenchmarks(batchSize).map(l =>
     WorkflowJob(
       id = s"run_jmh_benchmark_${l.head}",
       name = s"Jmh Benchmark ${l.head}",
@@ -118,6 +118,6 @@ object JmhCurrentBenchmarkWorkflow {
     )
   )
 
-  def apply(): Seq[WorkflowJob] = jmhRun() ++ jmhPublish()
+  def apply(batchSize: Int): Seq[WorkflowJob] = jmhRun(batchSize) ++ jmhPublish(batchSize)
 
 }
