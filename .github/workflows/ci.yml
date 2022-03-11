@@ -44,10 +44,10 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f CookieDecodeBenchmark.txt
-          cat > CookieDecodeBenchmark.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+          rm -f Current_CookieDecodeBenchmark.txt
+          cat > Current_CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../Current_CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../Current_CookieDecodeBenchmark.txt
 
       - uses: actions/upload-artifact@v3
         with:
@@ -79,10 +79,10 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f HttpCombineEval.txt
-          cat > HttpCombineEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../HttpCombineEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpCombineEval.txt
+          rm -f Current_HttpCombineEval.txt
+          cat > Current_HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../Current_HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../Current_HttpCombineEval.txt
 
       - uses: actions/upload-artifact@v3
         with:
@@ -114,10 +114,10 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f HttpRouteTextPerf.txt
-          cat > HttpRouteTextPerf.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpRouteTextPerf.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+          rm -f Current_HttpRouteTextPerf.txt
+          cat > Current_HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../Current_HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../Current_HttpRouteTextPerf.txt
 
       - uses: actions/upload-artifact@v3
         with:
@@ -149,10 +149,10 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f CookieDecodeBenchmark.txt
-          cat > CookieDecodeBenchmark.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../CookieDecodeBenchmark.txt
+          rm -f Main_CookieDecodeBenchmark.txt
+          cat > Main_CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../Main_CookieDecodeBenchmark.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../Main_CookieDecodeBenchmark.txt
 
       - uses: actions/upload-artifact@v3
         with:
@@ -184,10 +184,10 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f HttpCombineEval.txt
-          cat > HttpCombineEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../HttpCombineEval.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../HttpCombineEval.txt
+          rm -f Main_HttpCombineEval.txt
+          cat > Main_HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../Main_HttpCombineEval.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../Main_HttpCombineEval.txt
 
       - uses: actions/upload-artifact@v3
         with:
@@ -219,10 +219,10 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f HttpRouteTextPerf.txt
-          cat > HttpRouteTextPerf.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../HttpRouteTextPerf.txt
-          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../HttpRouteTextPerf.txt
+          rm -f Main_HttpRouteTextPerf.txt
+          cat > Main_HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../Main_HttpRouteTextPerf.txt
+          sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../Main_HttpRouteTextPerf.txt
 
       - uses: actions/upload-artifact@v3
         with:

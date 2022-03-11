@@ -14,8 +14,8 @@ object JmhCurrentBenchmarkWorkflow {
     path.replaceAll("^.*[\\/\\\\]", "").replaceAll(".scala", "")
   }).sorted
 
-  def sbtCommand(list: Seq[String]) = list.map(str =>
-    s"""sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 $str" | grep "thrpt" >> ../${list.head}.txt""".stripMargin)
+  def sbtCommand(list: Seq[String], branch: String = "Current") = list.map(str =>
+    s"""sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 $str" | grep "thrpt" >> ../${branch}_${list.head}.txt""".stripMargin)
 
   def groupedBenchmarks(batchSize: Int) = getFilenames.grouped(batchSize).toList
   def dependencies(batchSize: Int) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_Current_${l.head}",s"run_jmh_benchmark_Main_${l.head}"))
@@ -127,12 +127,12 @@ object JmhCurrentBenchmarkWorkflow {
         ),
         WorkflowStep.Run(
           env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
-          commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt", s"cat > ${l.head}.txt") ++ sbtCommand(l),
+          commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${branch}_${l.head}.txt", s"cat > ${branch}_${l.head}.txt") ++ sbtCommand(l, branch),
           id = Some("run_benchmark"),
           name = Some("Run Benchmark")
         ),
         WorkflowStep.Use(
-          UseRef.Public("actions", "upload-artifact", s"v3"),
+          UseRef.Public("actions", "upload-artifact", "v3"),
           Map(
             "name" -> s"jmh_result_${branch}_${l.head}",
             "path" -> s"${branch}_${l.head}.txt"
