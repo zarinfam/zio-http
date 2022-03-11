@@ -9,27 +9,23 @@ object JmhCurrentBenchmarkWorkflow {
   val scalaSources: PathFilter = ** / "*.scala"
   val files = FileTreeView.default.list(Glob("./zio-http-benchmarks/src/main/scala/zhttp.benchmarks/**"), scalaSources)
 
-  def getStr = files.map(file => {
+  def getFilenames = files.map(file => {
     val path = file._1.toString
     path.replaceAll("^.*[\\/\\\\]", "").replaceAll(".scala", "")
   }).sorted
-  println(getStr)
 
-  def lists1(list: Seq[String]) = list.map(str =>
+  def sbtCommand(list: Seq[String]) = list.map(str =>
     s"""sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 $str" | grep "thrpt" >> ../${list.head}.txt""".stripMargin)
 
-  def list2 = getStr.grouped(4).toList
-  val need = list2.flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_${l.head}"))
-  println(need)
-  println(list2)
+  def groupedBenchmarks = getFilenames.grouped(4).toList
+  def dependencies = groupedBenchmarks.flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_${l.head}"))
 
-  val comment =    Seq(WorkflowJob(
-  runsOnExtraLabels = List("zio-http"),
+  def jmhPublish() = Seq(WorkflowJob(
   id = "jmh_publish",
   name = "Jmh Publish",
   scalas = List(Scala213),
-  needs =  need,
-  steps = list2.map(l => {
+  needs =  dependencies,
+  steps = groupedBenchmarks.map(l => {
     WorkflowStep.Use(
       ref = UseRef.Public("actions", "download-artifact", "v3"),
       Map(
@@ -46,7 +42,7 @@ object JmhCurrentBenchmarkWorkflow {
       id = Some("create_body"),
       name = Some("create_body")
     )
-  ) ++ list2.map( l => {
+  ) ++ groupedBenchmarks.map(l => {
     WorkflowStep.Run(
       commands = List(
         s"""while IFS= read -r line; do
@@ -79,14 +75,14 @@ object JmhCurrentBenchmarkWorkflow {
             |**\uD83D\uDE80 Jmh Benchmark:**
             |
             |- Current Branch:
-            | ${{steps.echo_value.outputs.body}}""".stripMargin,
-      ),
+            | ${{steps.echo_value.outputs.body}}""".stripMargin
+      )
     )
-  ),
-),
+  )
 )
+  )
 
-  def jmhBenchmark() = list2.map(l =>
+  def jmhRun() = groupedBenchmarks.map(l =>
     WorkflowJob(
       id = s"run_jmh_benchmark_${l.head}",
       name = s"Jmh Benchmark_${l.head}",
@@ -95,8 +91,8 @@ object JmhCurrentBenchmarkWorkflow {
         WorkflowStep.Use(
           UseRef.Public("actions", "checkout", s"v2"),
           Map(
-            "path" -> "zio-http",
-          ),
+            "path" -> "zio-http"
+          )
         ),
         WorkflowStep.Use(
           UseRef.Public("actions", "setup-java", s"v2"),
@@ -105,12 +101,12 @@ object JmhCurrentBenchmarkWorkflow {
             "java-version" -> "8"
           )
         ),
-          WorkflowStep.Run(
-            env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
-            commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt",s"cat > ${l.head}.txt") ++ lists1(l),
-            id = Some("run_benchmark"),
-            name = Some("Run Benchmark"),
-          ),
+        WorkflowStep.Run(
+          env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
+          commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt",s"cat > ${l.head}.txt") ++ sbtCommand(l),
+          id = Some("run_benchmark"),
+          name = Some("Run Benchmark")
+        ),
         WorkflowStep.Use(
           UseRef.Public("actions", "upload-artifact", s"v3"),
           Map(
@@ -119,10 +115,9 @@ object JmhCurrentBenchmarkWorkflow {
           )
         )
       )
+    )
   )
-  ) ++ comment
 
-
-  def apply(): Seq[WorkflowJob] = jmhBenchmark()
+  def apply(): Seq[WorkflowJob] = jmhRun() ++ jmhPublish()
 
 }
