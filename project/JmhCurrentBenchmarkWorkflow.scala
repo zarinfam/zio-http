@@ -27,7 +27,6 @@ object JmhCurrentBenchmarkWorkflow {
   runsOnExtraLabels = List("zio-http"),
   id = "jmh_publish",
   name = "Jmh Publish",
-  oses = List("centos"),
   scalas = List(Scala213),
   needs =  need,
   steps = list2.map(l => {
@@ -91,9 +90,14 @@ object JmhCurrentBenchmarkWorkflow {
     WorkflowJob(
       id = s"run_jmh_benchmark_${l.head}",
       name = s"Jmh Benchmark_${l.head}",
-      oses = List("centos"),
       scalas = List(Scala213),
       steps = List(
+        WorkflowStep.Use(
+          UseRef.Public("actions", "checkout", s"v2"),
+          Map(
+            "path" -> "zio-http",
+          ),
+        ),
         WorkflowStep.Use(
           UseRef.Public("actions", "setup-java", s"v2"),
           Map(
@@ -103,7 +107,7 @@ object JmhCurrentBenchmarkWorkflow {
         ),
           WorkflowStep.Run(
             env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
-            commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt",s"cat > ${l.head}.txt") ++ lists1(l),
+            commands = List(s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${l.head}.txt",s"cat > ${l.head}.txt") ++ lists1(l),
             id = Some("run_benchmark"),
             name = Some("Run Benchmark"),
           ),

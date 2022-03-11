@@ -23,11 +23,15 @@ jobs:
     name: Jmh Benchmark_CookieDecodeBenchmark
     strategy:
       matrix:
-        os: [centos]
+        os: [ubuntu-latest]
         scala: [2.13.8]
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v2
+        with:
+          path: zio-http
+
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
@@ -38,7 +42,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
-          cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
           rm -f CookieDecodeBenchmark.txt
           cat > CookieDecodeBenchmark.txt
@@ -56,11 +59,15 @@ jobs:
     name: Jmh Benchmark_HttpRouteTextPerf
     strategy:
       matrix:
-        os: [centos]
+        os: [ubuntu-latest]
         scala: [2.13.8]
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v2
+        with:
+          path: zio-http
+
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
@@ -71,7 +78,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
-          cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
           rm -f HttpRouteTextPerf.txt
           cat > HttpRouteTextPerf.txt
@@ -88,7 +94,7 @@ jobs:
     needs: [run_jmh_benchmark_CookieDecodeBenchmark, run_jmh_benchmark_HttpRouteTextPerf]
     strategy:
       matrix:
-        os: [centos]
+        os: [ubuntu-latest]
         scala: [2.13.8]
         java: [temurin@11]
     runs-on: [ "${{ matrix.os }}", zio-http ]
