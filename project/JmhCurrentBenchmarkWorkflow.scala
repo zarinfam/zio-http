@@ -75,13 +75,14 @@ object JmhCurrentBenchmarkWorkflow {
         | body1="${body1//$'\n'/'%0A'}"
         | body1="${body1//$'\r'/'%0D'}"
         | echo "$body1"
-        | echo "::set-output name=body1::$(echo "$body1")
+        | echo "::set-output name=body1::$(echo "$body1")"
         | body2=$(cat body2.txt)
         | body2="${body2//'%'/'%25'}"
         | body2="${body2//$'\n'/'%0A'}"
         | body2="${body2//$'\r'/'%0D'}"
         | echo "$body2"
-        | echo "::set-output name=body2::$(echo "$body2")"""".stripMargin
+        | echo "::set-output name=body2::$(echo "$body2")"
+        | """.stripMargin
       ),
       id = Some("set_output"),
       name = Some("Set Output")
@@ -97,8 +98,9 @@ object JmhCurrentBenchmarkWorkflow {
             |- **Current Branch**:
             | ${{steps.set_output.outputs.body1}}
             |
-            | - **Main Branch**:
-            | ${{steps.set_output.outputs.body2}}""".stripMargin
+            |- **Main Branch**:
+            | ${{steps.set_output.outputs.body2}}
+            | """.stripMargin
       )
     )
   )
