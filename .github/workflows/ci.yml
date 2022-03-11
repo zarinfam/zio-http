@@ -19,6 +19,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
+  build:
   run_jmh_benchmark_CookieDecodeBenchmark:
     name: Jmh Benchmark CookieDecodeBenchmark
     strategy:
@@ -229,8 +230,8 @@ jobs:
           name: jmh_result_HttpNestedFlatMapEval
           path: HttpNestedFlatMapEval.txt
 
-  jmh_publish:
-    name: Jmh Publish
+  jmh_publish_main:
+    name: Jmh Publish Main
     needs: [run_jmh_main_benchmark_CookieDecodeBenchmark, run_jmh_main_benchmark_HttpNestedFlatMapEval]
     strategy:
       matrix:

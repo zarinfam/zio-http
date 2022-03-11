@@ -21,8 +21,8 @@ object JmhMainBenchmarkWorkflow {
   def dependencies(batchSize: Int) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"run_jmh_main_benchmark_${l.head}"))
 
   def jmhPublish(batchSize: Int) = Seq(WorkflowJob(
-    id = "jmh_publish",
-    name = "Jmh Publish",
+    id = "jmh_publish_main",
+    name = "Jmh Publish Main",
     scalas = List(Scala213),
     needs =  dependencies(batchSize),
     steps = groupedBenchmarks(batchSize).map(l => {
