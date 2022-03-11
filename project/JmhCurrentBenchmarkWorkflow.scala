@@ -18,13 +18,13 @@ object JmhCurrentBenchmarkWorkflow {
     s"""sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 $str" | grep "thrpt" >> ../${list.head}.txt""".stripMargin)
 
   def groupedBenchmarks(batchSize: Int) = getFilenames.grouped(batchSize).toList
-  def dependencies(batchSize: Int) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_${l.head}"))
+  def dependencies(batchSize: Int, branch: String) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_${branch}_${l.head}"))
 
-  def jmhPublish(batchSize: Int) = Seq(WorkflowJob(
-  id = "jmh_publish",
-  name = "Jmh Publish",
+  def jmhPublish(batchSize: Int, branch: String = "Current") = Seq(WorkflowJob(
+  id = s"jmh_publish_${branch}",
+  name = s"Jmh Publish ${branch}",
   scalas = List(Scala213),
-  needs =  dependencies(batchSize),
+  needs =  dependencies(batchSize, branch),
   steps = groupedBenchmarks(batchSize).map(l => {
     WorkflowStep.Use(
       ref = UseRef.Public("actions", "download-artifact", "v3"),
@@ -82,20 +82,20 @@ object JmhCurrentBenchmarkWorkflow {
 )
   )
 
-  def jmhRun(batchSize: Int) = groupedBenchmarks(batchSize).map(l =>
+  def jmhRun(batchSize: Int, branch: String = "Current") = groupedBenchmarks(batchSize).map(l =>
     WorkflowJob(
-      id = s"run_jmh_benchmark_${l.head}",
-      name = s"Jmh Benchmark ${l.head}",
+      id = s"run_jmh_benchmark_${branch}_${l.head}",
+      name = s"Jmh Benchmark ${branch} ${l.head}",
       scalas = List(Scala213),
       steps = List(
         WorkflowStep.Use(
-          UseRef.Public("actions", "checkout", s"v2"),
+          UseRef.Public("actions", "checkout", "v2"),
           Map(
             "path" -> "zio-http"
           )
         ),
         WorkflowStep.Use(
-          UseRef.Public("actions", "setup-java", s"v2"),
+          UseRef.Public("actions", "setup-java", "v2"),
           Map(
             "distribution" -> "temurin",
             "java-version" -> "8"
@@ -118,6 +118,6 @@ object JmhCurrentBenchmarkWorkflow {
     )
   )
 
-  def apply(batchSize: Int): Seq[WorkflowJob] = jmhRun(batchSize) ++ jmhPublish(batchSize)
+  def apply(batchSize: Int): Seq[WorkflowJob] = jmhRun(batchSize) ++ jmhPublish(batchSize) ++ jmhRun(batchSize, "Main") ++ jmhPublish(batchSize, "Main")
 
 }

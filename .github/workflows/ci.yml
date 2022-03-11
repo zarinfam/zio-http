@@ -19,8 +19,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  run_jmh_benchmark_CookieDecodeBenchmark:
-    name: Jmh Benchmark CookieDecodeBenchmark
+  run_jmh_benchmark_Current_CookieDecodeBenchmark:
+    name: Jmh Benchmark Current CookieDecodeBenchmark
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -54,8 +54,8 @@ jobs:
           name: jmh_result_CookieDecodeBenchmark
           path: CookieDecodeBenchmark.txt
 
-  run_jmh_benchmark_HttpCombineEval:
-    name: Jmh Benchmark HttpCombineEval
+  run_jmh_benchmark_Current_HttpCombineEval:
+    name: Jmh Benchmark Current HttpCombineEval
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -89,8 +89,8 @@ jobs:
           name: jmh_result_HttpCombineEval
           path: HttpCombineEval.txt
 
-  run_jmh_benchmark_HttpRouteTextPerf:
-    name: Jmh Benchmark HttpRouteTextPerf
+  run_jmh_benchmark_Current_HttpRouteTextPerf:
+    name: Jmh Benchmark Current HttpRouteTextPerf
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -124,9 +124,9 @@ jobs:
           name: jmh_result_HttpRouteTextPerf
           path: HttpRouteTextPerf.txt
 
-  jmh_publish:
-    name: Jmh Publish
-    needs: [run_jmh_benchmark_CookieDecodeBenchmark, run_jmh_benchmark_HttpCombineEval, run_jmh_benchmark_HttpRouteTextPerf]
+  jmh_publish_Current:
+    name: Jmh Publish Current
+    needs: [run_jmh_benchmark_Current_CookieDecodeBenchmark, run_jmh_benchmark_Current_HttpCombineEval, run_jmh_benchmark_Current_HttpRouteTextPerf]
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -201,8 +201,8 @@ jobs:
             - **Current Branch**:
              ${{steps.set_output.outputs.body}}
 
-  run_jmh_main_benchmark_CookieDecodeBenchmark:
-    name: Jmh Main Benchmark CookieDecodeBenchmark
+  run_jmh_benchmark_Main_CookieDecodeBenchmark:
+    name: Jmh Benchmark Main CookieDecodeBenchmark
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -210,9 +210,8 @@ jobs:
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
         with:
-          ref: main
           path: zio-http
 
       - uses: actions/setup-java@v2
@@ -237,8 +236,8 @@ jobs:
           name: jmh_result_CookieDecodeBenchmark
           path: CookieDecodeBenchmark.txt
 
-  run_jmh_main_benchmark_HttpCombineEval:
-    name: Jmh Main Benchmark HttpCombineEval
+  run_jmh_benchmark_Main_HttpCombineEval:
+    name: Jmh Benchmark Main HttpCombineEval
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -246,9 +245,8 @@ jobs:
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
         with:
-          ref: main
           path: zio-http
 
       - uses: actions/setup-java@v2
@@ -273,8 +271,8 @@ jobs:
           name: jmh_result_HttpCombineEval
           path: HttpCombineEval.txt
 
-  run_jmh_main_benchmark_HttpRouteTextPerf:
-    name: Jmh Main Benchmark HttpRouteTextPerf
+  run_jmh_benchmark_Main_HttpRouteTextPerf:
+    name: Jmh Benchmark Main HttpRouteTextPerf
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -282,9 +280,8 @@ jobs:
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
         with:
-          ref: main
           path: zio-http
 
       - uses: actions/setup-java@v2
@@ -309,9 +306,9 @@ jobs:
           name: jmh_result_HttpRouteTextPerf
           path: HttpRouteTextPerf.txt
 
-  jmh_publish_main:
+  jmh_publish_Main:
     name: Jmh Publish Main
-    needs: [run_jmh_main_benchmark_CookieDecodeBenchmark, run_jmh_main_benchmark_HttpCombineEval, run_jmh_main_benchmark_HttpRouteTextPerf]
+    needs: [run_jmh_benchmark_Main_CookieDecodeBenchmark, run_jmh_benchmark_Main_HttpCombineEval, run_jmh_benchmark_Main_HttpRouteTextPerf]
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -383,5 +380,5 @@ jobs:
 
             **🚀 Jmh Benchmark:**
 
-            - **Main Branch**:
+            - **Current Branch**:
              ${{steps.set_output.outputs.body}}

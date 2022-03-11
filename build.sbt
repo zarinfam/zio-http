@@ -11,7 +11,7 @@ ThisBuild / githubWorkflowPREventTypes   := Seq(
   PREventType.Reopened,
   PREventType.Edited,
 )
-ThisBuild / githubWorkflowAddedJobs      := JmhCurrentBenchmarkWorkflow(2) ++ JmhMainBenchmarkWorkflow(2)
+ThisBuild / githubWorkflowAddedJobs      := JmhCurrentBenchmarkWorkflow(2)
 
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches += RefPredicate.StartsWith(Ref.Tag("v"))
