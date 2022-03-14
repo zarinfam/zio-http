@@ -20,62 +20,48 @@ object JmhCurrentBenchmarkWorkflow {
   def groupedBenchmarks(batchSize: Int) = getFilenames.grouped(batchSize).toList
   def dependencies(batchSize: Int) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_Current_${l.head}",s"run_jmh_benchmark_Main_${l.head}"))
 
+  def downloadArtifact(branch: String, batchSize: Int) = groupedBenchmarks(batchSize).flatMap(l => {
+    Seq(
+      WorkflowStep.Use(
+        ref = UseRef.Public("actions", "download-artifact", "v3"),
+        Map(
+          "name" -> s"jmh_result_${branch}_${l.head}"
+        )
+      ),
+      WorkflowStep.Run(
+        commands = List(
+          s"""while IFS= read -r line; do
+             |   IFS=' ' read -ra PARSED_RESULT <<< "$$line"
+             |   B_VALUE=$$(echo "$${PARSED_RESULT[1]}": "$${PARSED_RESULT[4]}" ops/sec"")
+             |   echo $$B_VALUE >> ${branch}.txt
+             | done < ${branch}_${l.head}.txt""".stripMargin),
+        id = Some(s"result_${branch}_${l.head}"),
+        name = Some(s"Result ${branch} ${l.head}")
+      )
+    )
+  })
+  def setOutput(branch: String) =     WorkflowStep.Run(
+    commands = List(
+      s"""body=$$(cat $branch.txt)
+         | body="$${body//'%'/'%25'}"
+         | body="$${body//$$'\\n'/'%0A'}"
+         | body="$${body//$$'\\r'/'%0D'}"
+         | echo "$$body"
+         | echo "::set-output name=body::$$(echo "$$body")"
+         | """.stripMargin
+    ),
+    id = Some(s"set_output_$branch"),
+    name = Some(s"Set Output_$branch")
+  )
   def jmhPublish(batchSize: Int) = Seq(WorkflowJob(
   id = "jmh_publish",
   name = "Jmh Publish",
   scalas = List(Scala213),
   needs =  dependencies(batchSize),
-  steps = groupedBenchmarks(batchSize).flatMap(l => {
+  steps = downloadArtifact("Current", batchSize) ++ downloadArtifact("Main", batchSize) ++
     Seq(
-    WorkflowStep.Use(
-      ref = UseRef.Public("actions", "download-artifact", "v3"),
-      Map(
-        "name" -> s"jmh_result_Current_${l.head}"
-      )
-    ),
-    WorkflowStep.Use(
-      ref = UseRef.Public("actions", "download-artifact", "v3"),
-      Map(
-        "name" -> s"jmh_result_Main_${l.head}"
-      )
-    )
-    )
-  }) ++ groupedBenchmarks(batchSize).map(l => {
-    WorkflowStep.Run(
-      commands = List(
-        s"""while IFS= read -r line; do
-           |   IFS=' ' read -ra PARSED_RESULT <<< "$$line"
-           |   B_VALUE=$$(echo "$${PARSED_RESULT[1]}": "$${PARSED_RESULT[4]}" ops/sec"")
-           |   echo $$B_VALUE >> body1.txt
-           | done < Current_${l.head}.txt
-           |while IFS= read -r line; do
-           |   IFS=' ' read -ra PARSED_RESULT <<< "$$line"
-           |   B_VALUE=$$(echo "$${PARSED_RESULT[1]}": "$${PARSED_RESULT[4]}" ops/sec"")
-           |   echo $$B_VALUE >> body2.txt
-           | done < Main_${l.head}.txt """.stripMargin),
-      id = Some(s"result_current_${l.head}"),
-      name = Some(s"Result Current ${l.head}")
-    )
-  }) ++ Seq(
-    WorkflowStep.Run(
-      commands = List(
-      """body1=$(cat body1.txt)
-        | body1="${body1//'%'/'%25'}"
-        | body1="${body1//$'\n'/'%0A'}"
-        | body1="${body1//$'\r'/'%0D'}"
-        | echo "$body1"
-        | echo "::set-output name=body1::$(echo "$body1")"
-        | body2=$(cat body2.txt)
-        | body2="${body2//'%'/'%25'}"
-        | body2="${body2//$'\n'/'%0A'}"
-        | body2="${body2//$'\r'/'%0D'}"
-        | echo "$body2"
-        | echo "::set-output name=body2::$(echo "$body2")"
-        | """.stripMargin
-      ),
-      id = Some("set_output"),
-      name = Some("Set Output")
-    ),
+      setOutput("Current"),
+      setOutput("Main"),
     WorkflowStep.Use(
       ref = UseRef.Public("peter-evans", "commit-comment", "v1"),
       params = Map(
@@ -85,10 +71,10 @@ object JmhCurrentBenchmarkWorkflow {
             |**\uD83D\uDE80 Jmh Benchmark:**
             |
             |- **Current Branch**:
-            | ${{steps.set_output.outputs.body1}}
+            | ${{steps.set_output_Current.outputs.body}}
             |
             |- **Main Branch**:
-            | ${{steps.set_output.outputs.body2}}
+            | ${{steps.set_output_Main.outputs.body}}
             | """.stripMargin
       )
     )

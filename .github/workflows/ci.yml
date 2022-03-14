@@ -243,83 +243,100 @@ jobs:
         with:
           name: jmh_result_Current_CookieDecodeBenchmark
 
-      - uses: actions/download-artifact@v3
-        with:
-          name: jmh_result_Main_CookieDecodeBenchmark
+      - name: Result Current CookieDecodeBenchmark
+        id: result_Current_CookieDecodeBenchmark
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> Current.txt
+           done < Current_CookieDecodeBenchmark.txt
 
       - uses: actions/download-artifact@v3
         with:
           name: jmh_result_Current_HttpCombineEval
 
-      - uses: actions/download-artifact@v3
-        with:
-          name: jmh_result_Main_HttpCombineEval
+      - name: Result Current HttpCombineEval
+        id: result_Current_HttpCombineEval
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> Current.txt
+           done < Current_HttpCombineEval.txt
 
       - uses: actions/download-artifact@v3
         with:
           name: jmh_result_Current_HttpRouteTextPerf
 
+      - name: Result Current HttpRouteTextPerf
+        id: result_Current_HttpRouteTextPerf
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> Current.txt
+           done < Current_HttpRouteTextPerf.txt
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: jmh_result_Main_CookieDecodeBenchmark
+
+      - name: Result Main CookieDecodeBenchmark
+        id: result_Main_CookieDecodeBenchmark
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> Main.txt
+           done < Main_CookieDecodeBenchmark.txt
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: jmh_result_Main_HttpCombineEval
+
+      - name: Result Main HttpCombineEval
+        id: result_Main_HttpCombineEval
+        run: |
+          while IFS= read -r line; do
+             IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             echo $B_VALUE >> Main.txt
+           done < Main_HttpCombineEval.txt
+
       - uses: actions/download-artifact@v3
         with:
           name: jmh_result_Main_HttpRouteTextPerf
 
-      - name: Result Current CookieDecodeBenchmark
-        id: result_current_CookieDecodeBenchmark
+      - name: Result Main HttpRouteTextPerf
+        id: result_Main_HttpRouteTextPerf
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
              B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE >> body1.txt
-           done < Current_CookieDecodeBenchmark.txt
-          while IFS= read -r line; do
-             IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE >> body2.txt
-           done < Main_CookieDecodeBenchmark.txt 
+             echo $B_VALUE >> Main.txt
+           done < Main_HttpRouteTextPerf.txt
 
-      - name: Result Current HttpCombineEval
-        id: result_current_HttpCombineEval
+      - name: Set Output_Current
+        id: set_output_Current
         run: |
-          while IFS= read -r line; do
-             IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE >> body1.txt
-           done < Current_HttpCombineEval.txt
-          while IFS= read -r line; do
-             IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE >> body2.txt
-           done < Main_HttpCombineEval.txt 
+          body=$(cat Current.txt)
+           body="${body//'%'/'%25'}"
+           body="${body//$'\n'/'%0A'}"
+           body="${body//$'\r'/'%0D'}"
+           echo "$body"
+           echo "::set-output name=body::$(echo "$body")"
 
-      - name: Result Current HttpRouteTextPerf
-        id: result_current_HttpRouteTextPerf
+      
+      - name: Set Output_Main
+        id: set_output_Main
         run: |
-          while IFS= read -r line; do
-             IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE >> body1.txt
-           done < Current_HttpRouteTextPerf.txt
-          while IFS= read -r line; do
-             IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
-             echo $B_VALUE >> body2.txt
-           done < Main_HttpRouteTextPerf.txt 
-
-      - name: Set Output
-        id: set_output
-        run: |
-          body1=$(cat body1.txt)
-           body1="${body1//'%'/'%25'}"
-           body1="${body1//$'\n'/'%0A'}"
-           body1="${body1//$'\r'/'%0D'}"
-           echo "$body1"
-           echo "::set-output name=body1::$(echo "$body1")"
-           body2=$(cat body2.txt)
-           body2="${body2//'%'/'%25'}"
-           body2="${body2//$'\n'/'%0A'}"
-           body2="${body2//$'\r'/'%0D'}"
-           echo "$body2"
-           echo "::set-output name=body2::$(echo "$body2")"
+          body=$(cat Main.txt)
+           body="${body//'%'/'%25'}"
+           body="${body//$'\n'/'%0A'}"
+           body="${body//$'\r'/'%0D'}"
+           echo "$body"
+           echo "::set-output name=body::$(echo "$body")"
 
       
       - uses: peter-evans/commit-comment@v1
@@ -330,8 +347,8 @@ jobs:
             **🚀 Jmh Benchmark:**
 
             - **Current Branch**:
-             ${{steps.set_output.outputs.body1}}
+             ${{steps.set_output_Current.outputs.body}}
 
             - **Main Branch**:
-             ${{steps.set_output.outputs.body2}}
+             ${{steps.set_output_Main.outputs.body}}
              
