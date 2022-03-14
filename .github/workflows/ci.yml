@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           path: zio-http
+          ref: 
 
       - uses: actions/setup-java@v2
         with:
@@ -44,7 +45,6 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f Current_CookieDecodeBenchmark.txt
           cat > Current_CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../Current_CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../Current_CookieDecodeBenchmark.txt
@@ -66,6 +66,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           path: zio-http
+          ref: 
 
       - uses: actions/setup-java@v2
         with:
@@ -79,7 +80,6 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f Current_HttpCombineEval.txt
           cat > Current_HttpCombineEval.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../Current_HttpCombineEval.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../Current_HttpCombineEval.txt
@@ -101,6 +101,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           path: zio-http
+          ref: 
 
       - uses: actions/setup-java@v2
         with:
@@ -114,7 +115,6 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f Current_HttpRouteTextPerf.txt
           cat > Current_HttpRouteTextPerf.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../Current_HttpRouteTextPerf.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../Current_HttpRouteTextPerf.txt
@@ -133,9 +133,10 @@ jobs:
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
         with:
           path: zio-http
+          ref: main
 
       - uses: actions/setup-java@v2
         with:
@@ -149,7 +150,6 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f Main_CookieDecodeBenchmark.txt
           cat > Main_CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 CookieDecodeBenchmark" | grep "thrpt" >> ../Main_CookieDecodeBenchmark.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCollectEval" | grep "thrpt" >> ../Main_CookieDecodeBenchmark.txt
@@ -168,9 +168,10 @@ jobs:
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
         with:
           path: zio-http
+          ref: main
 
       - uses: actions/setup-java@v2
         with:
@@ -184,7 +185,6 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f Main_HttpCombineEval.txt
           cat > Main_HttpCombineEval.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpCombineEval" | grep "thrpt" >> ../Main_HttpCombineEval.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpNestedFlatMapEval" | grep "thrpt" >> ../Main_HttpCombineEval.txt
@@ -203,9 +203,10 @@ jobs:
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
         with:
           path: zio-http
+          ref: main
 
       - uses: actions/setup-java@v2
         with:
@@ -219,7 +220,6 @@ jobs:
         run: |
           cd zio-http
           sed -i -e '$aaddSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")' project/plugins.sbt
-          rm -f Main_HttpRouteTextPerf.txt
           cat > Main_HttpRouteTextPerf.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 HttpRouteTextPerf" | grep "thrpt" >> ../Main_HttpRouteTextPerf.txt
           sbt -no-colors -v "zhttpBenchmarks/jmh:run -i 3 -wi 3 -f1 -t1 ProbeContentTypeBenchmark" | grep "thrpt" >> ../Main_HttpRouteTextPerf.txt
@@ -266,9 +266,7 @@ jobs:
       - name: Create Comment
         id: create_comment
         run: |
-          rm -f body1.txt
           cat > body2.txt
-          rm -f body2.txt
           cat > body2.txt
 
       
