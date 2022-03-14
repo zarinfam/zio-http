@@ -43,9 +43,7 @@ object JmhCurrentBenchmarkWorkflow {
   }) ++ Seq(
     WorkflowStep.Run(
       commands = List(
-        """rm -f body1.txt
-        |cat > body2.txt
-        |rm -f body2.txt
+        """cat > body2.txt
         |cat > body2.txt
         |""".stripMargin),
       id = Some("create_comment"),
@@ -129,7 +127,7 @@ object JmhCurrentBenchmarkWorkflow {
         ),
         WorkflowStep.Run(
           env = Map("GITHUB_TOKEN" -> "${{secrets.ACTIONS_PAT}}"),
-          commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"rm -f ${branch}_${l.head}.txt", s"cat > ${branch}_${l.head}.txt") ++ sbtCommand(l, branch),
+          commands = List("cd zio-http", s"sed -i -e '$$a${jmhPlugin}' project/plugins.sbt", s"cat > ${branch}_${l.head}.txt") ++ sbtCommand(l, branch),
           id = Some("run_benchmark"),
           name = Some("Run Benchmark")
         ),
