@@ -31,7 +31,7 @@ object JmhCurrentBenchmarkWorkflow {
   /**
   Get dependent jobs for publishing the result
    */
-  def dependencies(batchSize: Int) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"run_jmh_benchmark_Current_${l.head}",s"run_jmh_benchmark_Main_${l.head}"))
+  def dependencies(batchSize: Int) = groupedBenchmarks(batchSize).flatMap((l: Seq[String]) => List(s"Jmh_Current_${l.head}",s"Jmh_Main_${l.head}"))
 
   /**
   Download Artifacts and parse result
@@ -108,7 +108,7 @@ object JmhCurrentBenchmarkWorkflow {
   def run(batchSize: Int, branch: String) = groupedBenchmarks(batchSize).map(l => {
     val checkout = if(branch == "Current") "" else "main"
     WorkflowJob(
-      id = s"run_jmh_${branch}_${l.head}",
+      id = s"Jmh_${branch}_${l.head}",
       name = s"Jmh ${branch} ${l.head}",
       scalas = List(Scala213),
       steps = List(

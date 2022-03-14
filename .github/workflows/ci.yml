@@ -19,7 +19,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  run_jmh_Current_CookieDecodeBenchmark:
+  Jmh_Current_CookieDecodeBenchmark:
     name: Jmh Current CookieDecodeBenchmark
     strategy:
       matrix:
@@ -54,7 +54,7 @@ jobs:
           name: jmh_Current_CookieDecodeBenchmark
           path: Current_CookieDecodeBenchmark.txt
 
-  run_jmh_Current_HttpCombineEval:
+  Jmh_Current_HttpCombineEval:
     name: Jmh Current HttpCombineEval
     strategy:
       matrix:
@@ -89,7 +89,7 @@ jobs:
           name: jmh_Current_HttpCombineEval
           path: Current_HttpCombineEval.txt
 
-  run_jmh_Current_HttpRouteTextPerf:
+  Jmh_Current_HttpRouteTextPerf:
     name: Jmh Current HttpRouteTextPerf
     strategy:
       matrix:
@@ -124,7 +124,7 @@ jobs:
           name: jmh_Current_HttpRouteTextPerf
           path: Current_HttpRouteTextPerf.txt
 
-  run_jmh_Main_CookieDecodeBenchmark:
+  Jmh_Main_CookieDecodeBenchmark:
     name: Jmh Main CookieDecodeBenchmark
     strategy:
       matrix:
@@ -159,7 +159,7 @@ jobs:
           name: jmh_Main_CookieDecodeBenchmark
           path: Main_CookieDecodeBenchmark.txt
 
-  run_jmh_Main_HttpCombineEval:
+  Jmh_Main_HttpCombineEval:
     name: Jmh Main HttpCombineEval
     strategy:
       matrix:
@@ -194,7 +194,7 @@ jobs:
           name: jmh_Main_HttpCombineEval
           path: Main_HttpCombineEval.txt
 
-  run_jmh_Main_HttpRouteTextPerf:
+  Jmh_Main_HttpRouteTextPerf:
     name: Jmh Main HttpRouteTextPerf
     strategy:
       matrix:
@@ -231,7 +231,7 @@ jobs:
 
   jmh_publish:
     name: Jmh Publish
-    needs: [run_jmh_benchmark_Current_CookieDecodeBenchmark, run_jmh_benchmark_Main_CookieDecodeBenchmark, run_jmh_benchmark_Current_HttpCombineEval, run_jmh_benchmark_Main_HttpCombineEval, run_jmh_benchmark_Current_HttpRouteTextPerf, run_jmh_benchmark_Main_HttpRouteTextPerf]
+    needs: [Jmh_Current_CookieDecodeBenchmark, Jmh_Main_CookieDecodeBenchmark, Jmh_Current_HttpCombineEval, Jmh_Main_HttpCombineEval, Jmh_Current_HttpRouteTextPerf, Jmh_Main_HttpRouteTextPerf]
     strategy:
       matrix:
         os: [ubuntu-latest]
