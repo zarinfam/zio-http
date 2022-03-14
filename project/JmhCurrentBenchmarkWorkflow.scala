@@ -40,16 +40,7 @@ object JmhCurrentBenchmarkWorkflow {
       )
     )
     )
-  }) ++ Seq(
-    WorkflowStep.Run(
-      commands = List(
-        """cat > body2.txt
-        |cat > body2.txt
-        |""".stripMargin),
-      id = Some("create_comment"),
-      name = Some("Create Comment")
-    )
-  ) ++ groupedBenchmarks(batchSize).map(l => {
+  }) ++ groupedBenchmarks(batchSize).map(l => {
     WorkflowStep.Run(
       commands = List(
         s"""while IFS= read -r line; do

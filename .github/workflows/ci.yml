@@ -263,13 +263,6 @@ jobs:
         with:
           name: jmh_result_Main_HttpRouteTextPerf
 
-      - name: Create Comment
-        id: create_comment
-        run: |
-          cat > body2.txt
-          cat > body2.txt
-
-      
       - name: Result Current CookieDecodeBenchmark
         id: result_current_CookieDecodeBenchmark
         run: |
