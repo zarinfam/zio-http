@@ -19,8 +19,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  run_jmh_benchmark_Current_CookieDecodeBenchmark:
-    name: Jmh Benchmark Current CookieDecodeBenchmark
+  run_jmh_Current_CookieDecodeBenchmark:
+    name: Jmh Current CookieDecodeBenchmark
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -38,8 +38,8 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: Run Benchmark
-        id: run_benchmark
+      - name: Benchmark
+        id: benchmark
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
@@ -51,11 +51,11 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_Current_CookieDecodeBenchmark
+          name: jmh_Current_CookieDecodeBenchmark
           path: Current_CookieDecodeBenchmark.txt
 
-  run_jmh_benchmark_Current_HttpCombineEval:
-    name: Jmh Benchmark Current HttpCombineEval
+  run_jmh_Current_HttpCombineEval:
+    name: Jmh Current HttpCombineEval
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -73,8 +73,8 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: Run Benchmark
-        id: run_benchmark
+      - name: Benchmark
+        id: benchmark
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
@@ -86,11 +86,11 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_Current_HttpCombineEval
+          name: jmh_Current_HttpCombineEval
           path: Current_HttpCombineEval.txt
 
-  run_jmh_benchmark_Current_HttpRouteTextPerf:
-    name: Jmh Benchmark Current HttpRouteTextPerf
+  run_jmh_Current_HttpRouteTextPerf:
+    name: Jmh Current HttpRouteTextPerf
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -108,8 +108,8 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: Run Benchmark
-        id: run_benchmark
+      - name: Benchmark
+        id: benchmark
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
@@ -121,11 +121,11 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_Current_HttpRouteTextPerf
+          name: jmh_Current_HttpRouteTextPerf
           path: Current_HttpRouteTextPerf.txt
 
-  run_jmh_benchmark_Main_CookieDecodeBenchmark:
-    name: Jmh Benchmark Main CookieDecodeBenchmark
+  run_jmh_Main_CookieDecodeBenchmark:
+    name: Jmh Main CookieDecodeBenchmark
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -143,8 +143,8 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: Run Benchmark
-        id: run_benchmark
+      - name: Benchmark
+        id: benchmark
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
@@ -156,11 +156,11 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_Main_CookieDecodeBenchmark
+          name: jmh_Main_CookieDecodeBenchmark
           path: Main_CookieDecodeBenchmark.txt
 
-  run_jmh_benchmark_Main_HttpCombineEval:
-    name: Jmh Benchmark Main HttpCombineEval
+  run_jmh_Main_HttpCombineEval:
+    name: Jmh Main HttpCombineEval
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -178,8 +178,8 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: Run Benchmark
-        id: run_benchmark
+      - name: Benchmark
+        id: benchmark
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
@@ -191,11 +191,11 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_Main_HttpCombineEval
+          name: jmh_Main_HttpCombineEval
           path: Main_HttpCombineEval.txt
 
-  run_jmh_benchmark_Main_HttpRouteTextPerf:
-    name: Jmh Benchmark Main HttpRouteTextPerf
+  run_jmh_Main_HttpRouteTextPerf:
+    name: Jmh Main HttpRouteTextPerf
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -213,8 +213,8 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: Run Benchmark
-        id: run_benchmark
+      - name: Benchmark
+        id: benchmark
         env:
           GITHUB_TOKEN: ${{secrets.ACTIONS_PAT}}
         run: |
@@ -226,7 +226,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: jmh_result_Main_HttpRouteTextPerf
+          name: jmh_Main_HttpRouteTextPerf
           path: Main_HttpRouteTextPerf.txt
 
   jmh_publish:
@@ -241,102 +241,102 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_Current_CookieDecodeBenchmark
+          name: jmh_Current_CookieDecodeBenchmark
 
       - name: Result Current CookieDecodeBenchmark
         id: result_Current_CookieDecodeBenchmark
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Current.txt
            done < Current_CookieDecodeBenchmark.txt
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_Current_HttpCombineEval
+          name: jmh_Current_HttpCombineEval
 
       - name: Result Current HttpCombineEval
         id: result_Current_HttpCombineEval
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Current.txt
            done < Current_HttpCombineEval.txt
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_Current_HttpRouteTextPerf
+          name: jmh_Current_HttpRouteTextPerf
 
       - name: Result Current HttpRouteTextPerf
         id: result_Current_HttpRouteTextPerf
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Current.txt
            done < Current_HttpRouteTextPerf.txt
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_Main_CookieDecodeBenchmark
+          name: jmh_Main_CookieDecodeBenchmark
 
       - name: Result Main CookieDecodeBenchmark
         id: result_Main_CookieDecodeBenchmark
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_CookieDecodeBenchmark.txt
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_Main_HttpCombineEval
+          name: jmh_Main_HttpCombineEval
 
       - name: Result Main HttpCombineEval
         id: result_Main_HttpCombineEval
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_HttpCombineEval.txt
 
       - uses: actions/download-artifact@v3
         with:
-          name: jmh_result_Main_HttpRouteTextPerf
+          name: jmh_Main_HttpRouteTextPerf
 
       - name: Result Main HttpRouteTextPerf
         id: result_Main_HttpRouteTextPerf
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec"")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_HttpRouteTextPerf.txt
 
-      - name: Set Output_Current
+      - name: Set Output Current
         id: set_output_Current
         run: |
           body=$(cat Current.txt)
            body="${body//'%'/'%25'}"
            body="${body//$'\n'/'%0A'}"
            body="${body//$'\r'/'%0D'}"
-           echo "$body"
-           echo "::set-output name=body::$(echo "$body")"
+           echo $body
+           echo ::set-output name=body::$(echo $body)
 
       
-      - name: Set Output_Main
+      - name: Set Output Main
         id: set_output_Main
         run: |
           body=$(cat Main.txt)
            body="${body//'%'/'%25'}"
            body="${body//$'\n'/'%0A'}"
            body="${body//$'\r'/'%0D'}"
-           echo "$body"
-           echo "::set-output name=body::$(echo "$body")"
+           echo $body
+           echo ::set-output name=body::$(echo $body)
 
       
       - uses: peter-evans/commit-comment@v1
