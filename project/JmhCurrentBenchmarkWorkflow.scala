@@ -106,16 +106,17 @@ object JmhCurrentBenchmarkWorkflow {
   )
 
   def jmhRun(batchSize: Int, branch: String = "Current") = groupedBenchmarks(batchSize).map(l => {
-    val checkout = if(branch == "Current") "v2" else "main"
+    val checkout = if(branch == "Current") "" else "main"
     WorkflowJob(
       id = s"run_jmh_benchmark_${branch}_${l.head}",
       name = s"Jmh Benchmark ${branch} ${l.head}",
       scalas = List(Scala213),
       steps = List(
         WorkflowStep.Use(
-          UseRef.Public("actions", "checkout", s"$checkout"),
+          UseRef.Public("actions", "checkout", "v2"),
           Map(
-            "path" -> "zio-http"
+            "path" -> "zio-http",
+            "ref" -> checkout
           )
         ),
         WorkflowStep.Use(
