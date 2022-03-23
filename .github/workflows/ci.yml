@@ -489,9 +489,10 @@ jobs:
 
             **🚀 Jmh Benchmark:**
 
-            - **Current Branch**:
-             ${{steps.set_output_Current.outputs.body}}
+            | - **Current Branch**: |  - **Main Branch**: |
+            |-----------------      | ----------- |  
+            | ${{steps.set_output_Current.outputs.body}} |  ${{steps.set_output_Main.outputs.body}} |
 
-            - **Main Branch**:
-             ${{steps.set_output_Main.outputs.body}}
+           
+            
              
