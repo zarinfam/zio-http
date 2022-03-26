@@ -248,7 +248,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "| "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
+             B_VALUE=$(echo "| "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec |")
              echo $B_VALUE >> Current.txt
            done < Current_CookieDecodeBenchmark.txt
 
@@ -274,7 +274,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo "| "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
+             B_VALUE=$(echo "| "${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec |")
              echo $B_VALUE >> Current.txt
            done < Current_HttpRouteTextPerf.txt
 
@@ -320,7 +320,7 @@ jobs:
       - name: Format Output
         id: fomat_output
         run: |
-         paste -d ' | ' Current.txt Main.txt > FinalOutput.txt
+         paste -d '' Current.txt Main.txt > FinalOutput.txt
            body=$(cat FinalOutput.txt)
            body="${body//'%'/'%25'}"
            body="${body//$'\n'/'%0A'}"
