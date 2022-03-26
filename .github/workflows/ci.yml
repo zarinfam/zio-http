@@ -287,7 +287,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec |")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_CookieDecodeBenchmark.txt
 
@@ -300,7 +300,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec |")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_HttpCombineEval.txt
 
@@ -313,7 +313,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
-             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec |")
+             B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_HttpRouteTextPerf.txt
            
