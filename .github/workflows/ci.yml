@@ -322,6 +322,7 @@ jobs:
         run: |
          paste -d '|' Current.txt Main.txt > FinalOutput.txt
            sed -i -e 's/^/|/' FinalOutput.txt
+           sed -i -e 's/$/|/' FinalOutput.txt
            body=$(cat FinalOutput.txt)
            body="${body//'%'/'%25'}"
            body="${body//$'\n'/'%0A'}"
