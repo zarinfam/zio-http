@@ -1,9 +1,9 @@
 package example
 
 import io.netty.util.AsciiString
-import zhttp.http.{Http, _}
+import zhttp.http._
 import zhttp.service.server.ServerChannelFactory
-import zhttp.service.{EventLoopGroup, Server}
+import zhttp.service.{EventLoopGroup, Server, UServer}
 import zio.{App, ExitCode, UIO, URIO}
 
 /**
@@ -46,12 +46,24 @@ object Main extends App {
       .provideCustomLayer(ServerChannelFactory.auto ++ EventLoopGroup.auto(8))
       .exitCode
 
-  private def server(app: HttpApp[Any, Nothing]) =
-    Server.app(app) ++
-      Server.port(8080) ++
-      Server.error(_ => UIO.unit) ++
-      Server.disableLeakDetection ++
-      Server.consolidateFlush ++
-      Server.disableFlowControl
+  private final def leakDetectionLevel(level: String): UServer = level match {
+    case "disabled" => Server.disableLeakDetection
+    case "simple"   => Server.simpleLeakDetection
+    case "advanced" => Server.advancedLeakDetection
+    case "paranoid" => Server.paranoidLeakDetection
+  }
+
+  private def server(app: HttpApp[Any, Nothing]) = {
+    zio.system.envs.map { envs =>
+      val server = Server.port(8080) ++
+        Server.app(app) ++
+        Server.error(_ => UIO.unit) ++
+        leakDetectionLevel(envs.getOrElse("LEAK_DETECTION_LEVEL", "disabled"))
+
+      server ++
+        (if (envs.getOrElse("CONSOLIDATE_FLUSH", "true").toBoolean) Server.consolidateFlush else server) ++
+        (if (envs.getOrElse("DISABLE_FLOW_CONTROL", "true").toBoolean) Server.disableFlowControl else server)
+    }
+  }
 
 }
