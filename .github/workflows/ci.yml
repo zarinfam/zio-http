@@ -249,6 +249,7 @@ jobs:
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
              B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
+             echo ${PARSED_RESULT[1]} >> a.txt
              echo $B_VALUE >> Current.txt
            done < Current_CookieDecodeBenchmark.txt
 
@@ -261,6 +262,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             echo ${PARSED_RESULT[1]} >> a.txt
              B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Current.txt
            done < Current_HttpCombineEval.txt
@@ -274,6 +276,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             echo ${PARSED_RESULT[1]} >> a.txt
              B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Current.txt
            done < Current_HttpRouteTextPerf.txt
@@ -287,6 +290,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             echo ${PARSED_RESULT[1]} >> b.txt
              B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_CookieDecodeBenchmark.txt
@@ -300,6 +304,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             echo ${PARSED_RESULT[1]} >> b.txt
              B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_HttpCombineEval.txt
@@ -313,6 +318,7 @@ jobs:
         run: |
           while IFS= read -r line; do
              IFS=' ' read -ra PARSED_RESULT <<< "$line"
+             echo ${PARSED_RESULT[1]} >> b.txt
              B_VALUE=$(echo ${PARSED_RESULT[1]}": "${PARSED_RESULT[4]}" ops/sec")
              echo $B_VALUE >> Main.txt
            done < Main_HttpRouteTextPerf.txt
@@ -320,7 +326,8 @@ jobs:
       - name: Format Output
         id: fomat_output
         run: |
-         paste -d '|' Current.txt Main.txt > FinalOutput.txt
+         cat a.txt b.txt | sort -u > c.txt
+         paste -d '|' c.txt Current.txt Main.txt > FinalOutput.txt
            sed -i -e 's/^/|/' FinalOutput.txt
            sed -i -e 's/$/|/' FinalOutput.txt
            body=$(cat FinalOutput.txt)
@@ -338,8 +345,8 @@ jobs:
 
             **🚀 Jmh Benchmark:**
 
-            | - **Current Branch**: |  - **Main Branch**: |
-            |-----------------      | ----------- |  
+            |Name | - **Current Branch**: |  - **Main Branch**: |
+            |-----|-----------------      | ----------- |  
             ${{steps.fomat_output.outputs.body}} 
 
            
