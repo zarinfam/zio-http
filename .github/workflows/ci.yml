@@ -328,10 +328,20 @@ jobs:
         run: |
          cat a.txt b.txt | sort -u > c.txt
           while IFS= read -r line; do
-           grep "$line" Current.txt | sed 's/^.*: //'  >> d.txt
-           grep "$line" Main.txt | sed 's/^.*: //'  >> e.txt
+          if grep -q "$line' Current.txt 
+          then
+          grep "$line' Current.txt | sed 's/^.*: //' >> final.txt; 
+          else
+          echo "" >> final.txt;
+          fi
+            if grep -q "$line' Main.txt 
+          then
+          grep "$line' Main.txt | sed 's/^.*: //' >> finalm.txt; 
+          else
+          echo "" >> finalm.txt;
+          fi
            done < c.txt
-         paste -d '|' c.txt d.txt e.txt Current.txt Main.txt > FinalOutput.txt
+         paste -d '|' c.txt final.txt finalm.txt Current.txt Main.txt > FinalOutput.txt
            sed -i -e 's/^/|/' FinalOutput.txt
            sed -i -e 's/$/|/' FinalOutput.txt
            body=$(cat FinalOutput.txt)
