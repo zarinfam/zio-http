@@ -328,8 +328,8 @@ jobs:
         run: |
          cat a.txt b.txt | sort -u > c.txt
           while IFS= read -r line; do
-           grep "$line" Current.txt | sed 's/^.*: //'  > d.txt
-           grep "$line" Main.txt | sed 's/^.*: //'  > e.txt
+           grep "$line" Current.txt | sed 's/^.*: //'  >> d.txt
+           grep "$line" Main.txt | sed 's/^.*: //'  >> e.txt
            done < c.txt
          paste -d '|' c.txt d.txt e.txt Current.txt Main.txt > FinalOutput.txt
            sed -i -e 's/^/|/' FinalOutput.txt
