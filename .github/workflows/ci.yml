@@ -346,7 +346,6 @@ jobs:
            sed -i -e 's/$/|/' FinalOutput.txt
            body=$(cat FinalOutput.txt)
            body="${body//'%'/'%25'}"
-           body="${body//$'\n'/'%0A'}"
            body="${body//$'\r'/'%0D'}"
            echo $body
            echo ::set-output name=body::$(echo $body)
