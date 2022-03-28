@@ -330,13 +330,13 @@ jobs:
           while IFS= read -r line; do
           if grep -q "$line' Current.txt 
           then
-          grep "$line' Current.txt | sed 's/^.*: //' >> final.txt; 
+          grep "$line" Current.txt | sed 's/^.*: //' >> final.txt; 
           else
           echo "" >> final.txt;
           fi
             if grep -q "$line' Main.txt 
           then
-          grep "$line' Main.txt | sed 's/^.*: //' >> finalm.txt; 
+          grep "$line" Main.txt | sed 's/^.*: //' >> finalm.txt; 
           else
           echo "" >> finalm.txt;
           fi
