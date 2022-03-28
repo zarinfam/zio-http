@@ -332,13 +332,13 @@ jobs:
           then
           grep "$line" Current.txt | sed 's/^.*: //' >> final.txt; 
           else
-          echo "" >> final.txt;
+          echo '' >> final.txt;
           fi
             if grep -q "$line' Main.txt 
           then
           grep "$line" Main.txt | sed 's/^.*: //' >> finalm.txt; 
           else
-          echo "" >> finalm.txt;
+          echo '' >> finalm.txt;
           fi
            done < c.txt
          paste -d '|' c.txt final.txt finalm.txt Current.txt Main.txt > FinalOutput.txt
@@ -346,6 +346,7 @@ jobs:
            sed -i -e 's/$/|/' FinalOutput.txt
            body=$(cat FinalOutput.txt)
            body="${body//'%'/'%25'}"
+           body="${body//$'\n'/'%0A'}"
            body="${body//$'\r'/'%0D'}"
            echo $body
            echo ::set-output name=body::$(echo $body)
