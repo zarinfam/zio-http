@@ -1,7 +1,7 @@
 package zhttp.service
 
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.ChannelPipeline
+import io.netty.channel.{ChannelOption, ChannelPipeline}
 import io.netty.util.ResourceLeakDetector
 import zhttp.http.Http._
 import zhttp.http.{Http, HttpApp}
@@ -32,6 +32,7 @@ sealed trait Server[-R, +E] { self =>
     case UnsafeChannelPipeline(init)           => s.copy(channelInitializer = init)
     case RequestDecompression(enabled, strict) => s.copy(requestDecompression = (enabled, strict))
     case ObjectAggregator(maxRequestSize)      => s.copy(objectAggregator = maxRequestSize)
+    case ServerChannelOption(optionList: List[(ChannelOption[_], _)]) => s.copy(optionList = optionList)
   }
 
   def make(implicit
@@ -157,6 +158,7 @@ object Server {
     channelInitializer: ChannelPipeline => Unit = null,
     requestDecompression: (Boolean, Boolean) = (false, false),
     objectAggregator: Int = -1,
+    optionList: List[(ChannelOption[_], _)] = List(),
   ) {
     def useAggregator: Boolean = objectAggregator >= 0
   }
@@ -170,15 +172,16 @@ object Server {
   private final case class LeakDetection(level: LeakDetectionLevel)                   extends UServer
   private final case class Error[R](errorHandler: Throwable => ZIO[R, Nothing, Unit]) extends Server[R, Nothing]
   private final case class Ssl(sslOptions: ServerSSLOptions)                          extends UServer
-  private final case class Address(address: InetSocketAddress)                        extends UServer
-  private final case class App[R, E](app: HttpApp[R, E])                              extends Server[R, E]
-  private final case class KeepAlive(enabled: Boolean)                                extends Server[Any, Nothing]
-  private final case class ConsolidateFlush(enabled: Boolean)                         extends Server[Any, Nothing]
-  private final case class AcceptContinue(enabled: Boolean)                           extends UServer
-  private final case class FlowControl(enabled: Boolean)                              extends UServer
-  private final case class UnsafeChannelPipeline(init: ChannelPipeline => Unit)       extends UServer
-  private final case class RequestDecompression(enabled: Boolean, strict: Boolean)    extends UServer
-  private final case class ObjectAggregator(maxRequestSize: Int)                      extends UServer
+  private final case class ServerChannelOption(channelOptionsList: List[(ChannelOption[_], _)]) extends UServer
+  private final case class Address(address: InetSocketAddress)                                  extends UServer
+  private final case class App[R, E](app: HttpApp[R, E])                                        extends Server[R, E]
+  private final case class KeepAlive(enabled: Boolean)                             extends Server[Any, Nothing]
+  private final case class ConsolidateFlush(enabled: Boolean)                      extends Server[Any, Nothing]
+  private final case class AcceptContinue(enabled: Boolean)                        extends UServer
+  private final case class FlowControl(enabled: Boolean)                           extends UServer
+  private final case class UnsafeChannelPipeline(init: ChannelPipeline => Unit)    extends UServer
+  private final case class RequestDecompression(enabled: Boolean, strict: Boolean) extends UServer
+  private final case class ObjectAggregator(maxRequestSize: Int)                   extends UServer
 
   def app[R, E](http: HttpApp[R, E]): Server[R, E]        = Server.App(http)
   def port(port: Int): UServer                            = Server.Address(new InetSocketAddress(port))
@@ -190,13 +193,14 @@ object Server {
   def ssl(sslOptions: ServerSSLOptions): UServer                                     = Server.Ssl(sslOptions)
   def acceptContinue: UServer                                                        = Server.AcceptContinue(true)
   def requestDecompression(strict: Boolean): UServer = Server.RequestDecompression(enabled = true, strict = strict)
-  val disableFlowControl: UServer                    = Server.FlowControl(false)
-  val disableLeakDetection: UServer                  = LeakDetection(LeakDetectionLevel.DISABLED)
-  val simpleLeakDetection: UServer                   = LeakDetection(LeakDetectionLevel.SIMPLE)
-  val advancedLeakDetection: UServer                 = LeakDetection(LeakDetectionLevel.ADVANCED)
-  val paranoidLeakDetection: UServer                 = LeakDetection(LeakDetectionLevel.PARANOID)
-  val disableKeepAlive: UServer                      = Server.KeepAlive(false)
-  val consolidateFlush: UServer                      = ConsolidateFlush(true)
+  def channelOption(optionList: List[(ChannelOption[_], _)]): UServer     = Server.ServerChannelOption(optionList)
+  val disableFlowControl: UServer                                         = Server.FlowControl(false)
+  val disableLeakDetection: UServer                                       = LeakDetection(LeakDetectionLevel.DISABLED)
+  val simpleLeakDetection: UServer                                        = LeakDetection(LeakDetectionLevel.SIMPLE)
+  val advancedLeakDetection: UServer                                      = LeakDetection(LeakDetectionLevel.ADVANCED)
+  val paranoidLeakDetection: UServer                                      = LeakDetection(LeakDetectionLevel.PARANOID)
+  val disableKeepAlive: UServer                                           = Server.KeepAlive(false)
+  val consolidateFlush: UServer                                           = ConsolidateFlush(true)
   def unsafePipeline(pipeline: ChannelPipeline => Unit): UServer          = UnsafeChannelPipeline(pipeline)
   def enableObjectAggregator(maxRequestSize: Int = Int.MaxValue): UServer = ObjectAggregator(maxRequestSize)
 
@@ -252,6 +256,9 @@ object Server {
       reqHandler      = settings.app.compile(zExec, settings, ServerTime.make)
       init            = ServerChannelInitializer(zExec, settings, reqHandler)
       serverBootstrap = new ServerBootstrap().channelFactory(channelFactory).group(eventLoopGroup)
+      _               = if (settings.optionList.nonEmpty)
+        settings.optionList.map(x => serverBootstrap.option(x._1.asInstanceOf[ChannelOption[Any]], x._2))
+        _ = println(serverBootstrap)
       chf  <- ZManaged.effect(serverBootstrap.childHandler(init).bind(settings.address))
       _    <- ChannelFuture.asManaged(chf)
       port <- ZManaged.effect(chf.channel().localAddress().asInstanceOf[InetSocketAddress].getPort)
