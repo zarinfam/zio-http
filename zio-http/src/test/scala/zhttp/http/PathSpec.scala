@@ -13,14 +13,16 @@ object PathSpec extends DefaultRunnableSpec with HExitAssertion {
           test("just /")(assert(Path("/").toList)(equalTo(Nil))) +
           test("un-prefixed")(assert(Path("A").toList)(equalTo(List("A")))) +
           test("prefixed")(assert(Path("/A").toList)(equalTo(List("A")))) +
+          test("suffixed")(assert(Path("/A/").toList)(equalTo(List("A", "")))) +
           test("nested paths")(assert(Path("A", "B", "C").toList)(equalTo(List("A", "B", "C")))) +
-          test("encoding string")(assert(Path("A", "B%2FC").toList)(equalTo(List("A", "B%2FC")))),
+          test("encoding string")(assert(Path("A", "B%2FC", "").toList)(equalTo(List("A", "B%2FC", "")))),
       ) +
         suite("apply()")(
           test("empty")(assert(Path())(equalTo(!!))) +
             test("empty string")(assert(Path(""))(equalTo(!!))) +
             test("just /")(assert(Path("/"))(equalTo(!!))) +
             test("prefixed path")(assert(Path("/A"))(equalTo(Path("A")))) +
+            test("suffixed")(assert(Path("/A/"))(equalTo(Path("A", "")))) +
             test("encoded paths")(assert(Path("/A/B%2FC"))(equalTo(Path("A", "B%2FC")))) +
             test("nested paths")(assert(Path("/A/B/C"))(equalTo(Path("A", "B", "C")))),
         ) +
@@ -35,6 +37,10 @@ object PathSpec extends DefaultRunnableSpec with HExitAssertion {
             val path = Path("a", "b", "c").encode
             assert(path)(equalTo("/a/b/c"))
           } +
+            test("a, b, c, ") {
+              val path = Path("a", "b", "c", "").encode
+              assert(path)(equalTo("/a/b/c/"))
+            } +
             test("Path()") {
               val path = Path().encode
               assert(path)(equalTo("/"))
@@ -60,6 +66,10 @@ object PathSpec extends DefaultRunnableSpec with HExitAssertion {
             test("extract path / a / b / c") {
               val path = collect { case !! / "a" / b => b }
               assert(path(Path("a", "b")))(isSome(equalTo("b")))
+            } +
+            test("extract path / a / b / c /") {
+              val path = collect { case !! / "a" / "b" / "" => "b" }
+              assert(path(Path("a", "b", "")))(isSome(equalTo("b")))
             },
         ) +
         suite("PathSyntax /:")(
