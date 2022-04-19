@@ -2,6 +2,7 @@ package zhttp.http
 
 import zhttp.internal.HttpGen
 import zio.test.Assertion.{equalTo, isSome}
+import zio.test.TestAspect.nonFlaky
 import zio.test._
 
 object CookieSpec extends DefaultRunnableSpec {

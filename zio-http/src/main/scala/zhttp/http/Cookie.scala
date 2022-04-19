@@ -3,11 +3,11 @@ package zhttp.http
 import zio.duration._
 
 import java.security.MessageDigest
-import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneOffset}
 import java.util.Base64.getEncoder
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import scala.util.Try
 
 final case class Cookie(
   name: String,
@@ -124,13 +124,16 @@ final case class Cookie(
    */
   def encode: String = {
     val c = secret match {
-      case Some(sec) => content + "." + signContent(sec)
-      case None      => content
+
+      case Some(sec) if(sec.nonEmpty) => content + "." + signContent(sec)
+      case _      => content
     }
 
     val cookie = List(
       Some(s"$name=$c"),
-      expires.map(e => s"Expires=$e"),
+      expires.map(e =>
+        s"Expires=${e}",
+      ),
       maxAge.map(a => s"Max-Age=${a.toString}"),
       domain.map(d => s"Domain=$d"),
       path.map(p => s"Path=${p.encode}"),
@@ -174,6 +177,8 @@ object Cookie {
   private val sameSiteStrict = "strict"
   private val sameSiteNone   = "none"
 
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME.withZone(ZoneOffset.UTC)
+
   sealed trait SameSite {
     def asString: String
   }
@@ -187,7 +192,7 @@ object Cookie {
    * Decodes from Set-Cookie header value inside of Response into a cookie
    */
   def decodeResponseCookie(headerValue: String, secret: Option[String] = None): Option[Cookie] =
-    Try(unsafeDecodeResponseCookie(headerValue, secret)).toOption
+    Option(unsafeDecodeResponseCookie(headerValue, secret))
 
   private[zhttp] def unsafeDecodeResponseCookie(headerValue: String, secret: Option[String] = None): Cookie = {
     var name: String              = null
@@ -254,7 +259,7 @@ object Cookie {
       }
     }
     val decodedCookie =
-      if ((name != null && !name.isEmpty) || (content != null && !content.isEmpty))
+      if ((name != null && name.nonEmpty) || (content != null && content.nonEmpty))
         Cookie(
           name = name,
           content = content,
@@ -270,8 +275,8 @@ object Cookie {
         null
 
     secret match {
-      case Some(s) => {
-        if (decodedCookie != null) {
+      case Some(s) if (decodedCookie != null) =>
+
           val index     = decodedCookie.content.lastIndexOf('.')
           val signature = decodedCookie.content.slice(index + 1, decodedCookie.content.length)
           val content   = decodedCookie.content.slice(0, index)
@@ -279,9 +284,9 @@ object Cookie {
           if (decodedCookie.verify(content, signature, s))
             decodedCookie.withContent(content).sign(s)
           else null
-        } else decodedCookie
-      }
-      case None    => decodedCookie
+
+
+      case _    => decodedCookie
     }
 
   }
