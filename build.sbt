@@ -87,6 +87,7 @@ lazy val root = (project in file("."))
     zhttpBenchmarks,
     zhttpTest,
     example,
+    zhttpIntegration,
   )
 
 lazy val zhttp = (project in file("zio-http"))
@@ -124,3 +125,21 @@ lazy val example = (project in file("./example"))
   .settings(runSettings("example.Main"))
   .settings(libraryDependencies ++= Seq(`jwt-core`))
   .dependsOn(zhttp)
+
+lazy val zhttpIntegration = (project in file("zio-http-integration"))
+  .settings(stdSettings("zhttpIntegration"))
+  .settings(publishSetting(false))
+  .settings(
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
+    libraryDependencies ++= Seq(
+      netty,
+      `zio`,
+      `zio-streams`,
+      `zio-test`,
+      `zio-test-sbt`,
+      `netty-incubator`,
+      `scala-compact-collection`,
+    ),
+  )
+  .dependsOn(zhttp)
+  .configs(IntegrationTest)
