@@ -54,9 +54,7 @@ sealed trait HttpData { self =>
    */
   final def toByteArray: Task[Array[Byte]] =
     toByteBuf flatMap { buf =>
-      ZIO
-        .attempt(ByteBufUtil.getBytes(buf))
-        .ensuring(ZIO.succeed(buf.release(buf.refCnt())))
+      ZIO.attempt(ByteBufUtil.getBytes(buf))
     }
 
   /**
