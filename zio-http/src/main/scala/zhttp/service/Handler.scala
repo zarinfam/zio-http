@@ -67,7 +67,7 @@ private[zhttp] final case class Handler[R](
                     .addAfter(
                       HTTP_REQUEST_HANDLER,
                       HTTP_CONTENT_HANDLER,
-                      new RequestBodyHandler(callback(ctx)),
+                      new RequestBodyHandler(callback),
                     ): Unit,
                 )
 

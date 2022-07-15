@@ -1,7 +1,7 @@
 package zhttp.http
 
-import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.ChannelHandlerContext
+import io.netty.buffer.{ByteBuf, ByteBufUtil, Unpooled}
+import io.netty.channel.Channel
 import io.netty.handler.codec.http.{HttpContent, LastHttpContent}
 import io.netty.util.AsciiString
 import zhttp.http.HttpData.ByteBufConfig
@@ -36,12 +36,28 @@ sealed trait HttpData { self =>
   def toHttp(config: ByteBufConfig): Http[Any, Throwable, Any, ByteBuf]
 
   /**
+   * Encodes the HttpData into a string
+   */
+  final def asString(charset: Charset = HTTP_CHARSET): Task[String] =
+    toByteArray.map(new String(_, charset))
+
+  /**
    * Returns true if HttpData is empty
    */
   final def isEmpty: Boolean = self match {
     case HttpData.Empty => true
     case _              => false
   }
+
+  /**
+   * Converts HttpData to an Array of Bytes
+   */
+  final def toByteArray: Task[Array[Byte]] =
+    toByteBuf flatMap { buf =>
+      ZIO
+        .attempt(ByteBufUtil.getBytes(buf))
+        .ensuring(ZIO.succeed(buf.release(buf.refCnt())))
+    }
 
   /**
    * Encodes the HttpData into a ByteBuf.
@@ -64,6 +80,11 @@ object HttpData {
 
   private def collectStream[R, E](stream: ZStream[R, E, ByteBuf]): ZIO[R, E, ByteBuf] =
     stream.runFold(Unpooled.compositeBuffer()) { case (cmp, buf) => cmp.addComponent(true, buf) }
+
+  /**
+   * Creates an unsafe async HttpData
+   */
+  private[zhttp] def unsafeAsync(cb: UnsafeAsync.UnsafeHandler => Unit): HttpData = HttpData.UnsafeAsync(cb)
 
   /**
    * Helper to create empty HttpData
@@ -127,27 +148,24 @@ object HttpData {
     }
   }
 
-  private[zhttp] final case class UnsafeAsync(unsafeRun: (ChannelHandlerContext => HttpContent => Any) => Unit)
-      extends HttpData {
+  private[zhttp] final case class UnsafeAsync(handle: UnsafeAsync.UnsafeHandler => Unit) extends HttpData {
 
     private def isLast(msg: HttpContent): Boolean = msg.isInstanceOf[LastHttpContent]
 
-    private def toQueue: ZIO[Any, Nothing, (ChannelHandlerContext, Queue[HttpContent])] = {
+    private def toQueue: ZIO[Any, Nothing, (Channel, Queue[HttpContent])] = {
       for {
-        queue      <- Queue.bounded[HttpContent](1)
-        ctxPromise <- Promise.make[Nothing, ChannelHandlerContext]
-        runtime    <- ZIO.runtime[Any]
-        _          <- ZIO.succeed {
-          unsafeRun { ch =>
+        queue     <- Queue.bounded[HttpContent](1)
+        chPromise <- Promise.make[Nothing, Channel]
+        runtime   <- ZIO.runtime[Any]
+        _         <- ZIO.succeed {
+          handle { (ch, content) =>
             Unsafe.unsafeCompat { implicit u =>
-              // TODO: passing unsafe explicitly is a bit of a hack, but it works for now
-              runtime.unsafe.run(ctxPromise.succeed(ch))(Trace.empty, u)
-              (msg: HttpContent) => runtime.unsafe.run(queue.offer(msg))(Trace.empty, u)
+              runtime.unsafe.run(chPromise.succeed(ch) &> queue.offer(content))(Trace.empty, u): Unit
             }
           }
         }
-        ctx        <- ctxPromise.await
-      } yield (ctx, queue)
+        ch        <- chPromise.await
+      } yield (ch, queue)
     }
 
     /**
@@ -155,13 +173,13 @@ object HttpData {
      */
     override def toByteBuf(config: ByteBufConfig): Task[ByteBuf] = for {
       body <- ZIO.async[Any, Nothing, ByteBuf](cb =>
-        unsafeRun(ch => {
+        handle {
           val buffer = Unpooled.compositeBuffer()
-          msg => {
+          (ch, msg) => {
             buffer.addComponent(true, msg.content)
             if (isLast(msg)) cb(ZIO.succeed(buffer)) else ch.read(): Unit
           }
-        }),
+        },
       )
     } yield body
 
@@ -170,14 +188,14 @@ object HttpData {
      */
     override def toByteBufStream(config: ByteBufConfig): ZStream[Any, Throwable, ByteBuf] = {
       ZStream.unwrap {
-        for {
-          reader <- toQueue
-          stream = ZStream
-            .fromQueueWithShutdown(reader._2)
-            .tap(_ => ZIO.succeed(reader._1.read()))
-            .takeUntil(isLast)
-            .map(_.content())
-        } yield stream
+        toQueue
+          .map(reader =>
+            ZStream
+              .fromQueueWithShutdown(reader._2)
+              .tap(_ => ZIO.succeed(reader._1.read()))
+              .takeUntil(isLast)
+              .map(_.content()),
+          )
       }
     }
 
@@ -292,6 +310,12 @@ object HttpData {
 
     override def toHttp(config: ByteBufConfig): Http[Any, Throwable, Any, ByteBuf] =
       Http.fromZIO(toByteBuf(config))
+  }
+
+  object UnsafeAsync {
+    trait UnsafeHandler {
+      def apply(channel: Channel, content: HttpContent): Unit
+    }
   }
 
   object ByteBufConfig {
