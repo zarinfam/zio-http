@@ -87,13 +87,13 @@ lazy val root = (project in file("."))
   .settings(stdSettings("root"))
   .settings(publishSetting(false))
   .aggregate(
-    zhttp,
+    zioHttp,
     zhttpBenchmarks,
     zhttpLogging,
     example,
   )
 
-lazy val zhttp = (project in file("zio-http"))
+lazy val zioHttp = (project in file("zio-http"))
   .settings(stdSettings("zio-http"))
   .settings(publishSetting(true))
   .settings(meta)
@@ -117,7 +117,7 @@ lazy val zhttp = (project in file("zio-http"))
 
 lazy val zhttpBenchmarks = (project in file("zio-http-benchmarks"))
   .enablePlugins(JmhPlugin)
-  .dependsOn(zhttp)
+  .dependsOn(zioHttp)
   .settings(stdSettings("zhttpBenchmarks"))
   .settings(publishSetting(false))
   .settings(libraryDependencies ++= Seq(zio))
@@ -141,4 +141,4 @@ lazy val example = (project in file("./example"))
   .settings(publishSetting(false))
   .settings(runSettings(Debug.Main))
   .settings(libraryDependencies ++= Seq(`jwt-core`))
-  .dependsOn(zhttp)
+  .dependsOn(zioHttp)
