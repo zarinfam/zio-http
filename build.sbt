@@ -94,7 +94,7 @@ lazy val root = (project in file("."))
   )
 
 lazy val zhttp = (project in file("zio-http"))
-  .settings(stdSettings("zhttp"))
+  .settings(stdSettings("zio-http"))
   .settings(publishSetting(true))
   .settings(meta)
   .settings(
