@@ -8,10 +8,13 @@ import zio.http._
 import zio.http.service.ServerInboundHandler.{log, unsafe}
 import zio.logging.Logger
 import zio.{Unsafe, ZIO}
+import java.util.concurrent.atomic.AtomicReference
 
 @Sharable
 private[zio] final case class ServerInboundHandler[R](
-  http: HttpApp[R, Throwable],
+  // http: HttpApp[R, Throwable],
+  httpRef: AtomicReference[HttpApp[R, Throwable]],
+  errorRef: AtomicReference[Option[Throwable => ZIO[R, Nothing, Unit]]],
   runtime: HttpRuntime[R],
   config: Server.Config[R, Throwable],
   time: ServerTime,
@@ -29,7 +32,7 @@ private[zio] final case class ServerInboundHandler[R](
       case jReq: FullHttpRequest =>
         log.debug(s"FullHttpRequest: [${jReq.method()} ${jReq.uri()}]")
         val req  = Request.fromFullHttpRequest(jReq)
-        val exit = http.execute(req)
+        val exit = httpRef.get.execute(req)
 
         if (self.attemptFastWrite(exit)) {
           unsafe.releaseRequest(jReq)
@@ -43,7 +46,7 @@ private[zio] final case class ServerInboundHandler[R](
       case jReq: HttpRequest =>
         log.debug(s"HttpRequest: [${jReq.method()} ${jReq.uri()}]")
         val req  = Request.fromHttpRequest(jReq)
-        val exit = http.execute(req)
+        val exit = httpRef.get.execute(req)
 
         if (!self.attemptFastWrite(exit)) {
           if (unsafe.canHaveBody(jReq)) unsafe.setAutoRead(false)
@@ -61,7 +64,8 @@ private[zio] final case class ServerInboundHandler[R](
   }
 
   override def exceptionCaught(ctx: Ctx, cause: Throwable): Unit = {
-    config.error.fold(super.exceptionCaught(ctx, cause))(f => runtime.run(f(cause))(ctx, unsafeClass))
+    errorRef.get.fold(super.exceptionCaught(ctx, cause))(f => runtime.run(f(cause))(ctx, unsafeClass))
+    // config.error.fold(super.exceptionCaught(ctx, cause))(f => runtime.run(f(cause))(ctx, unsafeClass))
   }
 }
 
