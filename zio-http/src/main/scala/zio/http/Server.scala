@@ -186,17 +186,18 @@ object Server {
       channelFactory <- ZIO.service[ServerChannelFactory]
       eventLoopGroup <- ZIO.service[EventLoopGroup]
       rtm            <- HttpRuntime.sticky[R](eventLoopGroup)
-      time            = ServerTime.make(1000 millis)
-      appRef          = new AtomicReference(settings.app)
-      errorRef        = new AtomicReference(settings.error)
-      reqHandler      = ServerInboundHandler(appRef, errorRef, rtm, settings, time)
+      time     = ServerTime.make(1000 millis)
+      appRef   = new AtomicReference(settings.app)
+      errorRef = new AtomicReference(settings.error)
+      reqHandler <- ZIO.succeed(ServerInboundHandler(appRef, errorRef, rtm, settings, time))
       init            = ServerChannelInitializer(rtm, settings, reqHandler)
       serverBootstrap = new ServerBootstrap().channelFactory(channelFactory).group(eventLoopGroup)
       chf  <- ZIO.attempt(serverBootstrap.childHandler(init).bind(settings.address))
       _    <- ChannelFuture.scoped(chf)
+      _    <- ZIO.succeed(ResourceLeakDetector.setLevel(settings.leakDetectionLevel.jResourceLeakDetectionLevel))
       port <- ZIO.attempt(chf.channel().localAddress().asInstanceOf[InetSocketAddress].getPort)
     } yield {
-      ResourceLeakDetector.setLevel(settings.leakDetectionLevel.jResourceLeakDetectionLevel)
+
       log.info(s"Server Started on Port: [${port}]")
       log.debug(s"Keep Alive: [${settings.keepAlive}]")
       log.debug(s"Leak Detection: [${settings.leakDetectionLevel}]")
