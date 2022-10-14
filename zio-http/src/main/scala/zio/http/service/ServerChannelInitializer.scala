@@ -25,6 +25,9 @@ final case class ServerChannelInitializer[R](
   cfg: Config[R, Throwable],
   reqHandler: ChannelHandler,
 ) extends ChannelInitializer[JChannel] {
+
+  val sslOption = Option(cfg.sslOption)
+
   override def initChannel(channel: JChannel): Unit = {
     // !! IMPORTANT !!
     // Order of handlers are critical to make this work
@@ -32,10 +35,15 @@ final case class ServerChannelInitializer[R](
     log.debug(s"Connection initialized: ${channel.remoteAddress()}")
     // SSL
     // Add SSL Handler if CTX is available
-    val sslctx   = if (cfg.sslOption == null) null else cfg.sslOption.sslContext
-    if (sslctx != null)
+    // val sslctx   = if (cfg.sslOption == null) null else cfg.sslOption.sslContext
+    // if (sslctx != null)
+    //   pipeline
+    //     .addFirst(SSL_HANDLER, new ServerSSLDecoder(sslctx, cfg.sslOption.httpBehaviour, cfg))
+
+    sslOption.map(_.sslContext).foreach { ctx =>
       pipeline
-        .addFirst(SSL_HANDLER, new ServerSSLDecoder(sslctx, cfg.sslOption.httpBehaviour, cfg))
+        .addFirst(SSL_HANDLER, new ServerSSLDecoder(ctx, sslOption.map(_.httpBehaviour).orNull, cfg))
+    }
 
     // ServerCodec
     // Instead of ServerCodec, we should use Decoder and Encoder separately to have more granular control over performance.
