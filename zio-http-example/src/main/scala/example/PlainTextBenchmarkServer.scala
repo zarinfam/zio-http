@@ -57,7 +57,7 @@ object Main extends ZIOAppDefault {
 
   val run: UIO[ExitCode] =
     app
-      .flatMap(Server.serve(_).provide(configLayer, Server.live))
+      .flatMap(Server.serve(_, Some({_ => ZIO.unit})).provide(configLayer, Server.live))
       .exitCode
 
 }
