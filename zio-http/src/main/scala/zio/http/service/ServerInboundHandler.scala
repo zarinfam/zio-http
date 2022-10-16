@@ -27,6 +27,7 @@ private[zio] final case class ServerInboundHandler[R](
     implicit val iCtx: ChannelHandlerContext = ctx
     msg match {
       case jReq: FullHttpRequest =>
+        println("1")
         log.debug(s"FullHttpRequest: [${jReq.method()} ${jReq.uri()}]")
         val req  = Request.fromFullHttpRequest(jReq)
         val exit = http.execute(req)
@@ -41,6 +42,7 @@ private[zio] final case class ServerInboundHandler[R](
           }
 
       case jReq: HttpRequest =>
+        println(s"2 -> ${http.getClass.getName}")
         log.debug(s"HttpRequest: [${jReq.method()} ${jReq.uri()}]")
         val req  = Request.fromHttpRequest(jReq)
         val exit = http.execute(req)
@@ -52,7 +54,9 @@ private[zio] final case class ServerInboundHandler[R](
           }
         }
 
-      case msg: HttpContent => ctx.fireChannelRead(msg): Unit
+      case msg: HttpContent => 
+        println(s"3 -> ${msg.getClass.getName}")
+        ctx.fireChannelRead(msg): Unit
 
       case _ =>
         throw new IllegalStateException(s"Unexpected message type: ${msg.getClass.getName}")
