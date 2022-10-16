@@ -80,14 +80,28 @@ object Server {
   ) extends Server {
     override def install[R](httpApp: HttpApp[R, Throwable], errorCallback: Option[ErrorCallback]): URIO[R, Unit] =
       ZIO.environment[R].map { env =>
-        val newApp =
-          if (env == ZEnvironment.empty) httpApp.asInstanceOf[HttpApp[Any, Throwable]]
-          else httpApp.provideEnvironment(env)
-        var loop   = true
+        println(s"""|--------------------------------------------------
+                    | Installing new Http, '${httpApp.getClass.getName}'
+                    |--------------------------------------------------""".stripMargin)
+        val newApp = httpApp.asInstanceOf[HttpApp[Any, Throwable]]
+
+        // val newApp =
+        //   if (env == ZEnvironment.empty) httpApp.asInstanceOf[HttpApp[Any, Throwable]]
+        //   else httpApp.provideEnvironment(env)
+        var loop = true
         while (loop) {
           val oldApp = appRef.get()
+          println(s"""|--------------------------------------------------
+                      | Old Http is currently, '${oldApp.getClass.getName}'
+                      | Installing new Http,   '${httpApp.getClass.getName}'
+                      | New Http is,           '${newApp.getClass.getName}'
+                      |--------------------------------------------------""".stripMargin)
           if (appRef.compareAndSet(oldApp, newApp ++ oldApp)) loop = false
+          // if (appRef.compareAndSet(oldApp, newApp ++ oldApp)) loop = false
         }
+        println(s"""|--------------------------------------------------
+                    | Current Http is now, '${appRef.get.getClass.getName}'
+                    |--------------------------------------------------""".stripMargin)
         ()
       } *> setErrorCallback(errorCallback)
 

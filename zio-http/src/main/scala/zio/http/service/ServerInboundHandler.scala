@@ -8,7 +8,7 @@ import zio.http.Server.ErrorCallback
 import zio.http._
 import zio.http.service.ServerInboundHandler.{log, unsafe}
 import zio.logging.Logger
-import zio.{Unsafe, ZIO}
+import zio._
 
 @Sharable
 private[zio] final case class ServerInboundHandler[R](
@@ -29,6 +29,7 @@ private[zio] final case class ServerInboundHandler[R](
     implicit val iCtx: ChannelHandlerContext = ctx
     msg match {
       case jReq: FullHttpRequest =>
+        // println("1")
         log.debug(s"FullHttpRequest: [${jReq.method()} ${jReq.uri()}]")
         val req  = Request.fromFullHttpRequest(jReq)
         val exit = appRef.get.execute(req)
@@ -36,27 +37,32 @@ private[zio] final case class ServerInboundHandler[R](
         if (self.attemptFastWrite(exit)) {
           unsafe.releaseRequest(jReq)
         } else
-          runtime.run {
-            self.attemptFullWrite(exit, jReq) ensuring ZIO.succeed {
-              unsafe.releaseRequest(jReq)(unsafeClass)
-            }
+          try {
+            runtime.run(self.attemptFullWrite(exit, jReq))
+          } finally {
+            unsafe.releaseRequest(jReq)(unsafeClass)
           }
 
       case jReq: HttpRequest =>
+        val app  = appRef.get // .execute(req)
+        // println(s"2 -> ${app.getClass.getName} ")
         log.debug(s"HttpRequest: [${jReq.method()} ${jReq.uri()}]")
         val req  = Request.fromHttpRequest(jReq)
-        val exit = appRef.get.execute(req)
+        val exit = app.execute(req)
 
         if (!self.attemptFastWrite(exit)) {
           if (unsafe.canHaveBody(jReq)) unsafe.setAutoRead(false)
-          runtime.run {
-            self.attemptFullWrite(exit, jReq) ensuring ZIO.succeed(unsafe.setAutoRead(true)(ctx, unsafeClass))
-          }
+          try {
+            runtime.run(self.attemptFullWrite(exit, jReq))
+          } finally { unsafe.setAutoRead(true)(ctx, unsafeClass) }
         }
 
-      case msg: HttpContent => ctx.fireChannelRead(msg): Unit
+      case msg: HttpContent =>
+        // println(s"3 -> ${msg.getClass.getName}")
+        ctx.fireChannelRead(msg): Unit
 
       case _ =>
+        // println("4")
         throw new IllegalStateException(s"Unexpected message type: ${msg.getClass.getName}")
     }
 
