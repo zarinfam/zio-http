@@ -14,6 +14,7 @@ fi
 
 if [ ! -d "../FrameworkBenchMarks" ]; then
     git clone https://github.com/zio/FrameworkBenchmarks.git ../FrameworkBenchMarks
+    git checkout profiling
 fi
 
 rm ../FrameworkBenchMarks/frameworks/Scala/zio-http/build.sbt

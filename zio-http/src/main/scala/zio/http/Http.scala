@@ -235,7 +235,12 @@ sealed trait Http[-R, +E, -A, +B] extends (A => ZIO[R, Option[E], B]) { self =>
    * Named alias for `++`
    */
   final def defaultWith[R1 <: R, E1 >: E, A1 <: A, B1 >: B](other: Http[R1, E1, A1, B1]): Http[R1, E1, A1, B1] =
-    Http.Combine(self, other)
+    (other, self) match {
+        case (Http.Empty, Http.Empty) => Http.empty
+        case (Http.Empty, http) => http
+        case (http, Http.Empty) => http
+        case (lhs, rhs) => Http.Combine(lhs, rhs)
+    }
 
   /**
    * Delays production of output B for the specified duration of time
