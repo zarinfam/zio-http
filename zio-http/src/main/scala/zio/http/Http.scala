@@ -93,7 +93,12 @@ sealed trait Http[-R, +E, -A, +B] extends (A => ZIO[R, Option[E], B]) { self =>
    * Named alias for `>>>`
    */
   final def andThen[R1 <: R, E1 >: E, B1 >: B, C](other: Http[R1, E1, B1, C]): Http[R1, E1, A, C] =
-    Http.Chain(self, other)
+    (self, other) match {
+      case (Http.Empty, Http.Empty) => Http.empty
+      case (Http.Empty, _)          => Http.empty
+      case (http, Http.Empty)       => Http.Chain(http, Http.empty)
+      case (lhs, rhs)               => Http.Chain(lhs, rhs)
+    }
 
   /**
    * Consumes the input and executes the Http.
@@ -235,11 +240,11 @@ sealed trait Http[-R, +E, -A, +B] extends (A => ZIO[R, Option[E], B]) { self =>
    * Named alias for `++`
    */
   final def defaultWith[R1 <: R, E1 >: E, A1 <: A, B1 >: B](other: Http[R1, E1, A1, B1]): Http[R1, E1, A1, B1] =
-    (other, self) match {
-        case (Http.Empty, Http.Empty) => Http.empty
-        case (Http.Empty, http) => http
-        case (http, Http.Empty) => http
-        case (lhs, rhs) => Http.Combine(lhs, rhs)
+    (self, other) match {
+      case (Http.Empty, Http.Empty) => Http.empty
+      case (Http.Empty, http)       => http
+      case (http, Http.Empty)       => http
+      case (lhs, rhs)               => Http.Combine(lhs, rhs)
     }
 
   /**
@@ -297,7 +302,11 @@ sealed trait Http[-R, +E, -A, +B] extends (A => ZIO[R, Option[E], B]) { self =>
     defect: Throwable => Http[R1, E1, A1, B1],
     success: B => Http[R1, E1, A1, B1],
     empty: Http[R1, E1, A1, B1],
-  ): Http[R1, E1, A1, B1] = Http.FoldHttp(self, failure, defect, success, empty)
+  ): Http[R1, E1, A1, B1] =
+    self match {
+      case Empty => empty
+      case http  => Http.FoldHttp(http, failure, defect, success, empty)
+    }
 
   /**
    * Extracts the value of the provided header name.
@@ -633,6 +642,7 @@ sealed trait Http[-R, +E, -A, +B] extends (A => ZIO[R, Option[E], B]) { self =>
         }
       }
     }
+
 }
 
 object Http {
