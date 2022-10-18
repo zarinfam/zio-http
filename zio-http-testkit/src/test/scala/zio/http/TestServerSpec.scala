@@ -64,7 +64,7 @@ object TestServerSpec extends ZIOSpecDefault {
           _             <- TestServer.addRequestResponse(testRequest, Response(Status.Ok))
           finalResponse <-
             Client.request(
-              testRequest.copy(url = testRequest.url.setPath(Path.root / "unhandled")),
+              testRequest.updateUrl( testRequest.url.setPath(Path.root / "unhandled")),
             )
         } yield assertTrue(finalResponse.status == Status.InternalServerError)
       },
@@ -74,7 +74,7 @@ object TestServerSpec extends ZIOSpecDefault {
           _             <- TestServer.addRequestResponse(testRequest, Response(Status.Ok))
           finalResponse <-
             Client.request(
-              testRequest.copy(headers = Headers.cacheControl("cache")),
+              testRequest.updateHeaders(_ => Headers.cacheControl("cache")),
             )
         } yield assertTrue(finalResponse.status == Status.InternalServerError)
       },

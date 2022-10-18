@@ -105,7 +105,7 @@ object ConnectionPool {
       NettyFutureExecutor.executed(channelFuture) *>
         ZIO
           .attempt(channelFuture.channel())
-          .debug("Created new channel")
+          // .debug("Created new channel")
     }
   }
 

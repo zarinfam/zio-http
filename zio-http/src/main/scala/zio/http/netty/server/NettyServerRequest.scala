@@ -35,8 +35,8 @@ private[zio] sealed abstract class NettyServerRequest(
 
   override def updateVersion(version: Version): Request = withUpdatedVersion(version)
 
-  override def updateHeaders(update: Headers => Headers)(implicit trace: Trace): Request = withUpdatedHeaders(
-    update(headers),
+  override def updateHeaders(update: Headers => Headers): Request = withUpdatedHeaders(
+    update(headers)
   )
 
   override def updateMethod(newMethod: Method): Request = newMethod match {

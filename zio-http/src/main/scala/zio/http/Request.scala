@@ -4,6 +4,7 @@ import zio.http.model._
 import zio.http.model.headers.HeaderExtension
 
 import java.net.InetAddress
+import zio.Trace
 
 trait Request extends HeaderExtension[Request] {
   def body: Body
@@ -47,7 +48,7 @@ object Request {
     /**
      * Updates the headers using the provided function
      */
-    override def updateHeaders(update: Headers => Headers)(implicit trace: Trace): Request =
+    override def updateHeaders(update: Headers => Headers): Request =
       self.copy(headers = update(self.headers))
 
     override def updateMethod(newMethod: Method): Request = self.copy(method = newMethod)
