@@ -30,19 +30,24 @@ object Server {
     ZIO.serviceWithZIO[Server](_.install(httpApp, errorCallback)) *> ZIO.service[Server].map(_.port)
   }
 
-  val default = ServerConfig.live >>> live
+  val default: ZLayer[Any, Throwable, Server] = {
+    implicit val trace = Trace.empty
+    ServerConfig.live >>> live
+  }
 
-  val live = NettyDriver.default >>> base
+  val live: ZLayer[ServerConfig, Throwable, Server] = {
+    implicit val trace = Trace.empty
+    NettyDriver.default >>> base
+  }
 
-  val base: ZLayer[
-    Driver,
-    Throwable,
-    Server,
-  ] = ZLayer.scoped {
-    for {
-      driver <- ZIO.service[Driver]
-      port   <- driver.start
-    } yield ServerLive(driver, port)
+  val base: ZLayer[Driver, Throwable, Server] = {
+    implicit val trace = Trace.empty
+    ZLayer.scoped {
+      for {
+        driver <- ZIO.service[Driver]
+        port   <- driver.start
+      } yield ServerLive(driver, port)
+    }
   }
 
   private final case class ServerLive(
@@ -51,25 +56,31 @@ object Server {
   ) extends Server {
     override def install[R](httpApp: HttpApp[R, Throwable], errorCallback: Option[ErrorCallback])(implicit
       trace: Trace,
-    ): URIO[R, Unit] =
-      ZIO.environment[R].flatMap { env =>
-        driver.addApp(
-          if (env == ZEnvironment.empty) httpApp.asInstanceOf[HttpApp[Any, Throwable]]
-          else httpApp.provideEnvironment(env),
-        )
+    ): URIO[R, Unit] = {
 
-      } *> setErrorCallback(errorCallback)
+      // ZIO.environment[R].flatMap { env =>
+      //   httpApp.provideEnvironment(env).flatMap { app =>
+      //     driver.install(app, errorCallback)
+      //   }
+      // // driver.addApp(
+      // //   if (env == ZEnvironment.empty) httpApp.asInstanceOf[HttpApp[Any, Throwable]]
+      // //   else httpApp.provideEnvironment(env)
+      // // )
+
+      // }
+      // *> setErrorCallback(errorCallback)
+      ZIO.environment[R].flatMap(driver.addApp(httpApp, _)) *> setErrorCallback(errorCallback)
+
+    }
 
     override def port: Int = bindPort
 
-    private def setErrorCallback(errorCallback: Option[ErrorCallback])(implicit trace: Trace): UIO[Unit] = {
-      ({
-        ZIO
-          .environment[Any]
-      } *> driver.setErrorCallback(errorCallback))
+    private def setErrorCallback(errorCallback: Option[ErrorCallback])(implicit trace: Trace): UIO[Unit] =
+      driver
+        .setErrorCallback(errorCallback)
         .unless(errorCallback.isEmpty)
         .map(_.getOrElse(()))
-    }
+
   }
 
 }

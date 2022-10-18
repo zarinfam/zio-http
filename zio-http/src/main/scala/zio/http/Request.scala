@@ -1,6 +1,5 @@
 package zio.http
 
-import zio.Trace
 import zio.http.model._
 import zio.http.model.headers.HeaderExtension
 

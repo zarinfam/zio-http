@@ -1,48 +1,59 @@
 package zio.http.api
 
 import zio._
-import zio.http._
+import zio.http.middleware.Auth
+import zio.http.{Client, Request, Server, URL}
 
 object APIExamples extends ZIOAppDefault {
-  import In._
+  import RouteCodec._
+  import QueryCodec._
 
-  val getUser =
-    API.get(literal("users") / int)
+  // MiddlewareSpec can be added at the service level as well
+  val getUsers =
+    EndpointSpec.get(literal("users") / int).out[Int]
 
-  val getUsersService =
-    getUser.handle[Any, Nothing] { case (id: Int) =>
-      ZIO.debug(s"API1 RESULT parsed: users/$id")
+  val getUserEndpoint =
+    getUsers.implement[Any, Nothing] { case (id: Int) =>
+      ZIO.succeedNow(id)
     }
 
   val getUserPosts =
-    API
-      .get(literal("users") / int / literal("posts") / query("name") / int)
+    EndpointSpec
+      .get(literal("users") / int / literal("posts") / int)
+      .in(query("name"))
 
-  val getUserPostsService =
-    getUserPosts.handle[Any, Nothing] { case (id1, query, id2) =>
+  val getUserPostEndpoint =
+    getUserPosts.implement[Any, Nothing] { case (id1, query, id2) =>
       ZIO.debug(s"API2 RESULT parsed: users/$id1/posts/$id2?name=$query")
     }
 
-  val services = getUsersService ++ getUserPostsService
+  val middlewareSpec =
+    MiddlewareSpec.auth
 
-  val app = services.toHttpApp
+  // just like api.handle
+  val middleware =
+    middlewareSpec.implement(_ => ZIO.unit)
 
-  val request = Request.get(url = URL.fromString("/users/100/posts/200?name=adam").toOption.get)
+  val serviceSpec =
+    (getUsers.toServiceSpec ++ getUserPosts.toServiceSpec).middleware(middlewareSpec)
+
+  val app = serviceSpec.toHttpApp(getUserEndpoint ++ getUserPostEndpoint, middleware)
+
+  val request = Request.get(url = URL.fromString("/users/1").toOption.get)
   println(s"Looking up $request")
 
-  val run = app(request).debug
+  val run = Server.serve(app).provide(Server.default)
 
   object Client {
     def example(client: Client) = {
       val registry =
-        APIRegistry.empty.registerAll(URL.fromString("http://localhost:8080").getOrElse(???)) {
-          getUser ++ getUserPosts
-        }
+        EndpointRegistry(URL.fromString("http://localhost:8080").getOrElse(???), serviceSpec)
 
-      val executor: APIExecutor[getUser.Id with getUserPosts.Id] = APIExecutor(client, registry)
+      val executor: APIExecutor[Any, Any, getUsers.Id with getUserPosts.Id] =
+        APIExecutor(client, registry, ZIO.succeed(Auth.Credentials("user", "pass")))
 
-      val x1 = getUser(42)
-      val x2 = getUserPosts(42, "adam", 200)
+      val x1 = getUsers(42)
+      val x2 = getUserPosts(42, 200, "adam")
 
       val result1 = executor(x1)
       val result2 = executor(x2)

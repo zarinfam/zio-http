@@ -8,12 +8,12 @@ import zio.schema._
 import zio.schema.codec._
 import zio.stacktracer.TracingImplicits.disableAutoTrace // scalafix:ok;
 
-private[api] final case class APIClient[I, O](apiRoot: URL, api: API[I, O]) {
+private[api] final case class EndpointClient[I, O](apiRoot: URL, api: EndpointSpec[I, O]) {
   private val optionSchema: Option[Schema[Any]]    = api.input.bodySchema.map(_.asInstanceOf[Schema[Any]])
   private val inputJsonEncoder: Any => Chunk[Byte] =
     JsonCodec.encode(optionSchema.getOrElse(Schema[Unit].asInstanceOf[Schema[Any]]))
   private val outputJsonDecoder: Chunk[Byte] => Either[String, Any] =
-    JsonCodec.decode(api.output.bodySchema.asInstanceOf[Schema[Any]])
+    JsonCodec.decode(api.output.bodySchema.get.asInstanceOf[Schema[Any]])
   private val deconstructor = Mechanic.makeDeconstructor(api.input).asInstanceOf[Mechanic.Deconstructor[Any]]
   private val flattened     = Mechanic.flatten(api.input)
 
@@ -22,10 +22,10 @@ private[api] final case class APIClient[I, O](apiRoot: URL, api: API[I, O]) {
 
     var i = 0
     while (i < inputs.length) {
-      val route = flattened.routes(i).asInstanceOf[In.Route[Any]]
-      val input = inputs(i)
+      val textCodec = flattened.routes(i).asInstanceOf[TextCodec[Any]]
+      val input     = inputs(i)
 
-      val segment = route.textCodec.encode(input)
+      val segment = textCodec.encode(input)
 
       path = path / segment
       i = i + 1
@@ -39,7 +39,7 @@ private[api] final case class APIClient[I, O](apiRoot: URL, api: API[I, O]) {
 
     var i = 0
     while (i < inputs.length) {
-      val query = flattened.queries(i).asInstanceOf[In.Query[Any]]
+      val query = flattened.queries(i).asInstanceOf[HttpCodec.Query[Any]]
       val input = inputs(i)
 
       val value = query.textCodec.encode(input)
@@ -57,7 +57,7 @@ private[api] final case class APIClient[I, O](apiRoot: URL, api: API[I, O]) {
 
     var i = 0
     while (i < inputs.length) {
-      val header = flattened.headers(i).asInstanceOf[In.Header[Any]]
+      val header = flattened.headers(i).asInstanceOf[HttpCodec.Header[Any]]
       val input  = inputs(i)
 
       val value = header.textCodec.encode(input)
@@ -68,6 +68,15 @@ private[api] final case class APIClient[I, O](apiRoot: URL, api: API[I, O]) {
     }
 
     headers
+  }
+
+  private def encodeMethod(inputs: Array[Any]): zio.http.model.Method = {
+    if (flattened.methods.nonEmpty) {
+      val method = flattened.methods.head.asInstanceOf[TextCodec[Any]]
+      zio.http.model.Method.fromString(method.encode(inputs(0)))
+    } else {
+      zio.http.model.Method.GET
+    }
   }
 
   private def encodeBody(inputs: Array[Any]): Body =
@@ -81,10 +90,11 @@ private[api] final case class APIClient[I, O](apiRoot: URL, api: API[I, O]) {
     val query   = encodeQuery(inputs.queries)
     val headers = encodeHeaders(inputs.headers)
     val body    = encodeBody(inputs.inputBodies)
+    val method  = encodeMethod(inputs.methods)
 
     val request = Request
       .default(
-        api.method,
+        method,
         apiRoot ++ URL(route, URL.Location.Relative, query),
         body,
       )

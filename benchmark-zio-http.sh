@@ -1,9 +1,6 @@
-if [ -z "$1" ]; then
-    COMMIT_SHA=$(git rev-parse --short HEAD)
-    ZIO_HTTP="zio/zio-http.git#$COMMIT_SHA"
-else
-    ZIO_HTTP="zio/zio-http.git#$1"
-fi
+
+COMMIT_SHA=$(git rev-parse --short HEAD)
+ZIO_HTTP="zio/zio-http.git#$COMMIT_SHA"
 
 if [ ! -e "/var/run/docker.sock" ]; then
     echo "'/var/run/docker.sock' does not exist.  Are you sure Docker is running?"
@@ -12,6 +9,7 @@ fi
 
 if [ ! -d "../FrameworkBenchMarks" ]; then
     git clone https://github.com/zio/FrameworkBenchmarks.git ../FrameworkBenchMarks
+    git checkout master
 fi
 
 rm ../FrameworkBenchMarks/frameworks/Scala/zio-http/build.sbt

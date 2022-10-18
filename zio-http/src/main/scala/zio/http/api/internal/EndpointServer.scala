@@ -3,22 +3,26 @@ package zio.http.api.internal
 import zio._
 import zio.http._
 import zio.http.api._
-import zio.http.model.Headers
+import zio.http.api.internal.Mechanic.Constructor
+import zio.http.model.{Headers}
 import zio.schema._
 import zio.schema.codec._
 import zio.stacktracer.TracingImplicits.disableAutoTrace // scalafix:ok;
 
-private[api] final case class APIServer[R, E, I, O](handledApi: Service.HandledAPI[R, E, I, O, _]) {
-  private val api     = handledApi.api
-  private val handler = handledApi.handler
+private[api] final case class EndpointServer[R, E, I, O](handledEndpoint: Endpoints.HandledEndpoint[R, E, I, O, _]) {
+  private val api     = handledEndpoint.endpointSpec
+  private val handler = handledEndpoint.handler
 
   private val optionSchema: Option[Schema[Any]] = api.input.bodySchema.map(_.asInstanceOf[Schema[Any]])
   private val bodyJsonDecoder: Chunk[Byte] => Either[String, Any] =
     JsonCodec.decode(optionSchema.getOrElse(Schema[Unit].asInstanceOf[Schema[Any]]))
   private val outputJsonEncoder: Any => Chunk[Byte]               =
-    JsonCodec.encode(api.output.bodySchema.asInstanceOf[Schema[Any]])
-  private val constructor = Mechanic.makeConstructor(api.input).asInstanceOf[Mechanic.Constructor[I]]
-  private val flattened   = Mechanic.flatten(api.input)
+    JsonCodec.encode(api.output.bodySchema.get.asInstanceOf[Schema[Any]])
+
+  private val constructor: Constructor[I]        = Mechanic.makeConstructor(api.input)
+  private val flattened: Mechanic.FlattenedAtoms = Mechanic.flatten(api.input)
+
+  private val hasOutput = api.output != HttpCodec.empty
 
   def handle(routeInputs: Chunk[Any], request: Request)(implicit trace: Trace): ZIO[R, E, Response] = {
     val inputsBuilder = flattened.makeInputsBuilder()
@@ -33,8 +37,10 @@ private[api] final case class APIServer[R, E, I, O](handledApi: Service.HandledA
       val input: I = constructor(inputsBuilder)
 
       handler(input).map { output =>
-        val body = outputJsonEncoder(output)
-        Response(body = Body.fromChunk(body))
+        val body =
+          if (hasOutput) Body.fromChunk(outputJsonEncoder(output))
+          else Body.empty
+        Response(body = body)
       }
     }
   }
@@ -42,7 +48,7 @@ private[api] final case class APIServer[R, E, I, O](handledApi: Service.HandledA
   private def decodeQuery(queryParams: QueryParams, inputs: Array[Any]): Unit = {
     var i = 0
     while (i < flattened.queries.length) {
-      val query = flattened.queries(i).asInstanceOf[In.Query[Any]]
+      val query = flattened.queries(i).asInstanceOf[HttpCodec.Query[Any]]
 
       val value = queryParams
         .getOrElse(query.name, Nil)
@@ -59,7 +65,7 @@ private[api] final case class APIServer[R, E, I, O](handledApi: Service.HandledA
   private def decodeHeaders(headers: Headers, inputs: Array[Any]): Unit = {
     var i = 0
     while (i < flattened.headers.length) {
-      val header = flattened.headers(i).asInstanceOf[In.Header[Any]]
+      val header = flattened.headers(i).asInstanceOf[HttpCodec.Header[Any]]
 
       val value = headers.get(header.name).getOrElse(throw APIError.MissingHeader(header.name))
 
@@ -71,10 +77,10 @@ private[api] final case class APIServer[R, E, I, O](handledApi: Service.HandledA
   }
 
   private def decodeBody(body: Body, inputs: Array[Any])(implicit trace: Trace): UIO[Unit] =
-    body.asChunk.orDie.map { chunk =>
-      if (inputs.length == 0) ()
-      else {
+    if (inputs.isEmpty)
+      ZIO.unit
+    else
+      body.asChunk.orDie.map { chunk =>
         inputs(0) = bodyJsonDecoder(chunk).getOrElse(throw APIError.MalformedRequestBody(api))
       }
-    }
 }

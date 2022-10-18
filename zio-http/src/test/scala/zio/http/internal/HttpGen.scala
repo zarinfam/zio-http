@@ -6,6 +6,7 @@ import zio.http.Path.Segment
 import zio.http.URL.Location
 import zio.http._
 import zio.http.model._
+import zio.http.model.headers.values._
 import zio.stream.ZStream
 import zio.test.{Gen, Sized}
 
@@ -62,7 +63,9 @@ object HttpGen {
       cnt  <- Gen
         .fromIterable(
           List(
-            Body.fromStream(ZStream.fromIterable(list).map(b => Chunk.fromArray(b.getBytes())).flattenChunks),
+            Body.fromStream(
+              ZStream.fromIterable(list, chunkSize = 2).map(b => Chunk.fromArray(b.getBytes())).flattenChunks,
+            ),
             Body.fromString(list.mkString("")),
             Body.fromChunk(Chunk.fromArray(list.mkString("").getBytes())),
             Body.fromByteBuf(Unpooled.copiedBuffer(list.mkString(""), HTTP_CHARSET)),
@@ -98,7 +101,9 @@ object HttpGen {
       cnt  <- Gen
         .fromIterable(
           List(
-            Body.fromStream(ZStream.fromIterable(list).map(b => Chunk.fromArray(b.getBytes())).flattenChunks),
+            Body.fromStream(
+              ZStream.fromIterable(list, chunkSize = 2).map(b => Chunk.fromArray(b.getBytes())).flattenChunks,
+            ),
             Body.fromString(list.mkString("")),
             Body.fromChunk(Chunk.fromArray(list.mkString("").getBytes())),
             Body.fromByteBuf(Unpooled.copiedBuffer(list.mkString(""), HTTP_CHARSET)),
@@ -218,4 +223,85 @@ object HttpGen {
     queryParams <- Gen.mapOf(Gen.alphaNumericString, Gen.chunkOf(Gen.alphaNumericString))
   } yield URL(path, kind, QueryParams(queryParams))
 
+  def acceptEncodingSingleValue(weight: Option[Double]): Gen[Any, AcceptEncoding] = Gen.fromIterable(
+    List(
+      AcceptEncoding.GZipEncoding(weight),
+      AcceptEncoding.DeflateEncoding(weight),
+      AcceptEncoding.BrEncoding(weight),
+      AcceptEncoding.IdentityEncoding(weight),
+      AcceptEncoding.CompressEncoding(weight),
+      AcceptEncoding.NoPreferenceEncoding(weight),
+      AcceptEncoding.InvalidEncoding,
+    ),
+  )
+
+  def acceptEncodingSingleValueWithWeight: Gen[Any, AcceptEncoding] = for {
+    weight <- Gen.option(Gen.double(0.1, 1.0))
+    value  <- acceptEncodingSingleValue(weight)
+  } yield value
+
+  def acceptEncoding: Gen[Any, AcceptEncoding] =
+    Gen.chunkOfBounded(1, 10)(acceptEncodingSingleValueWithWeight).map(AcceptEncoding.MultipleEncodings.apply)
+
+  def cacheControlSingleValue(seconds: Int): Gen[Any, CacheControl] =
+    Gen.fromIterable(
+      List(
+        CacheControl.Immutable,
+        CacheControl.InvalidCacheControl,
+        CacheControl.MaxAge(seconds),
+        CacheControl.MaxStale(seconds),
+        CacheControl.MinFresh(seconds),
+        CacheControl.MustRevalidate,
+        CacheControl.MustUnderstand,
+        CacheControl.NoCache,
+        CacheControl.NoStore,
+        CacheControl.NoTransform,
+        CacheControl.OnlyIfCached,
+        CacheControl.Private,
+        CacheControl.ProxyRevalidate,
+        CacheControl.Public,
+        CacheControl.SMaxAge(seconds),
+        CacheControl.StaleIfError(seconds),
+        CacheControl.StaleWhileRevalidate(seconds),
+      ),
+    )
+
+  def cacheControlSingleValueWithSeconds: Gen[Any, CacheControl] = for {
+    duration <- Gen.int(0, 1000000)
+    value    <- cacheControlSingleValue(duration)
+  } yield value
+
+  def cacheControl: Gen[Any, CacheControl] =
+    Gen.chunkOfBounded(1, 10)(cacheControlSingleValueWithSeconds).map(CacheControl.MultipleCacheControlValues.apply)
+
+  def allowHeaderSingleValue: Gen[Any, Allow] = Gen.fromIterable(
+    List(
+      Allow.OPTIONS,
+      Allow.GET,
+      Allow.HEAD,
+      Allow.POST,
+      Allow.PUT,
+      Allow.PATCH,
+      Allow.DELETE,
+      Allow.TRACE,
+      Allow.CONNECT,
+    ),
+  )
+
+  def allowHeader: Gen[Any, Allow] =
+    Gen.chunkOfBounded(1, 9)(allowHeaderSingleValue).map(Allow.AllowMethods.apply)
+
+  def connectionHeader: Gen[Any, Connection] =
+    Gen.elements(Connection.Close, Connection.KeepAlive, Connection.InvalidConnection)
+
+  def allowContentEncodingSingleValue: Gen[Any, ContentEncoding] = Gen.fromIterable(
+    List(
+      ContentEncoding.BrEncoding,
+      ContentEncoding.CompressEncoding,
+      ContentEncoding.GZipEncoding,
+      ContentEncoding.MultipleEncodings(Chunk(ContentEncoding.BrEncoding, ContentEncoding.CompressEncoding)),
+      ContentEncoding.DeflateEncoding,
+      ContentEncoding.InvalidEncoding,
+    ),
+  )
 }

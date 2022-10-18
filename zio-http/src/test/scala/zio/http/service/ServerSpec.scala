@@ -264,7 +264,7 @@ object ServerSpec extends HttpRunnableSpec {
       val res  =
         Http.fromStream(ZStream.fromPath(Paths.get(path))).deploy.body.mapZIO(_.asString).run(method = Method.POST)
       assertZIO(res)(equalTo("foo\nbar"))
-    },
+    } @@ TestAspect.os(os => !os.isWindows),
     suite("html")(
       test("body") {
         val res = Http.html(html(body(div(id := "foo", "bar")))).deploy.body.mapZIO(_.asString).run()
