@@ -194,8 +194,9 @@ private[zio] final case class ServerInboundHandler(
         if (attemptFastWrite(exit, time)) {
           releaseRequest(jReq)
         } else
-          runtime.run(ctx) {
-            (attemptFullWrite(exit, jReq, time, runtime) ensuring ZIO.succeed { releaseRequest(jReq) })
+          runtime.run(ctx, unsafeEnsuring = () => releaseRequest(jReq)) {
+            // (attemptFullWrite(exit, jReq, time, runtime) ensuring ZIO.succeed { releaseRequest(jReq) })
+            attemptFullWrite(exit, jReq, time, runtime) 
               .provideEnvironment(env)
           }
 
@@ -207,10 +208,10 @@ private[zio] final case class ServerInboundHandler(
 
         if (!attemptFastWrite(exit, time)) {
           if (canHaveBody(jReq)) setAutoRead(false)
-          runtime.run(ctx) {
-            (attemptFullWrite(exit, jReq, time, runtime) ensuring ZIO.succeed(setAutoRead(true)))
-              .provideEnvironment(env)
-          }
+            runtime.run(ctx, unsafeEnsuring = () => setAutoRead(true)) {
+              attemptFullWrite(exit, jReq, time, runtime)
+                .provideEnvironment(env)
+            }
         }
 
       case msg: HttpContent =>

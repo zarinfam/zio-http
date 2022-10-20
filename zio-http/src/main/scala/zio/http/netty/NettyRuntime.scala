@@ -14,7 +14,7 @@ private[zio] trait NettyRuntime { self =>
 
   def runtime(ctx: ChannelHandlerContext): Runtime[Any]
 
-  def run(ctx: ChannelHandlerContext, interruptOnClose: Boolean = true)(
+  def run(ctx: ChannelHandlerContext, interruptOnClose: Boolean = true, unsafeEnsuring: () => Unit = () => ())(
     program: ZIO[Any, Throwable, Any],
   )(implicit unsafe: Unsafe, trace: Trace): Unit = {
     val rtm: Runtime[Any] = runtime(ctx)
@@ -56,16 +56,19 @@ private[zio] trait NettyRuntime { self =>
       case Exit.Success(_)     =>
         log.debug(s"Completed Fiber: [${fiber.id}]")
         removeListener(close)
+        unsafeEnsuring()
       case Exit.Failure(cause) =>
         onFailure(cause, ctx)
         removeListener(close)
+        unsafeEnsuring()
     }
   }
 
   def runUninterruptible(ctx: ChannelHandlerContext)(
     program: ZIO[Any, Throwable, Any],
+    unsafeEnsuring: () => Unit = () => (),
   )(implicit unsafe: Unsafe, trace: Trace): Unit =
-    run(ctx, interruptOnClose = false)(program)
+    run(ctx, interruptOnClose = false, unsafeEnsuring = unsafeEnsuring)(program)
 }
 
 object NettyRuntime {
