@@ -39,6 +39,14 @@ private[zio] final case class ServerInboundHandler(
 
   private lazy val errCallback = errCallbackRef.get.orNull
 
+  private val bodylessMethods = List(
+    HttpMethod.TRACE,
+    HttpMethod.CONNECT,
+    HttpMethod.OPTIONS,
+    HttpMethod.HEAD,
+    HttpMethod.GET,
+  )
+
   @inline
   override def channelRead0(ctx: ChannelHandlerContext, msg: HttpObject): Unit = {
 
@@ -68,7 +76,7 @@ private[zio] final case class ServerInboundHandler(
         if (!attemptImmediateWrite(ctx, exit, time)) {
 
           if (
-            jReq.method() == HttpMethod.TRACE ||
+            bodylessMethods.contains(jReq.method()) ||
             jReq.headers().contains(HttpHeaderNames.CONTENT_LENGTH) ||
             jReq.headers().contains(HttpHeaderNames.TRANSFER_ENCODING)
           )
@@ -172,7 +180,8 @@ private[zio] final case class ServerInboundHandler(
       case _                       => false
     }
   }
-  private def makeZioRequest(ctx: ChannelHandlerContext, nettyReq: HttpRequest): Request     = {
+
+  private def makeZioRequest(ctx: ChannelHandlerContext, nettyReq: HttpRequest): Request = {
     val nettyHttpVersion = nettyReq.protocolVersion()
     val protocolVersion  = nettyHttpVersion match {
       case HttpVersion.HTTP_1_0 => Version.Http_1_0
@@ -186,29 +195,39 @@ private[zio] final case class ServerInboundHandler(
     //   case _                    => None
     // }
 
-    nettyReq match {
-      case nettyReq: FullHttpRequest =>
-        Request(
-          Body.fromByteBuf(nettyReq.content()),
-          Headers.make(nettyReq.headers()),
-          Method.fromHttpMethod(nettyReq.method()),
-          URL.fromString(nettyReq.uri()).getOrElse(URL.empty),
-          protocolVersion,
-          None,
-        )
-      case nettyReq: HttpRequest     =>
-        val body = Body.fromAsync { async =>
-          addAsyncBodyHandler(ctx, async)
-        }
-        Request(
-          body,
-          Headers.make(nettyReq.headers()),
-          Method.fromHttpMethod(nettyReq.method()),
-          URL.fromString(nettyReq.uri()).getOrElse(URL.empty),
-          protocolVersion,
-          None,
-        )
-    }
+    if (bodylessMethods.contains(nettyReq.method())) {
+      Request(
+        Body.empty,
+        Headers.make(nettyReq.headers()),
+        Method.fromHttpMethod(nettyReq.method()),
+        URL.fromString(nettyReq.uri()).getOrElse(URL.empty),
+        protocolVersion,
+        None,
+      )
+    } else
+      nettyReq match {
+        case nettyReq: FullHttpRequest =>
+          Request(
+            Body.fromByteBuf(nettyReq.content()),
+            Headers.make(nettyReq.headers()),
+            Method.fromHttpMethod(nettyReq.method()),
+            URL.fromString(nettyReq.uri()).getOrElse(URL.empty),
+            protocolVersion,
+            None,
+          )
+        case nettyReq: HttpRequest     =>
+          val body = Body.fromAsync { async =>
+            addAsyncBodyHandler(ctx, async)
+          }
+          Request(
+            body,
+            Headers.make(nettyReq.headers()),
+            Method.fromHttpMethod(nettyReq.method()),
+            URL.fromString(nettyReq.uri()).getOrElse(URL.empty),
+            protocolVersion,
+            None,
+          )
+      }
 
   }
 

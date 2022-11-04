@@ -67,7 +67,7 @@ abstract class HttpRunnableSpec extends ZIOSpecDefault { self =>
           Client.request(
             params
               .addHeader(DynamicServer.APP_ID, id)
-              .copy(url = URL(params.url.path, Location.Absolute(Scheme.HTTP, "localhost", port))),
+              .copy(method = Method.POST, url = URL(params.url.path, Location.Absolute(Scheme.HTTP, "localhost", port))),
           )
         }
       } yield response
