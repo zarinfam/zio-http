@@ -134,7 +134,7 @@ object RequestHandlerMiddleware {
               .asInstanceOf[Http.Route[Env, Err, Request, Response]]
               .run(in)
               .map { (http: Http[Env, Err, Request, Response]) =>
-                http @@ self.asInstanceOf[HttpAppMiddleware[Nothing, UpperEnv, LowerErr, Any]]
+                http @@ self
               }
           }
       }
